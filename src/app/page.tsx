@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import { supabase } from "./supabase";
 
 export default function Home() {
   const [formData, setFormData] = useState({
@@ -12,6 +13,10 @@ export default function Home() {
   });
   
   const [quoteResult, setQuoteResult] = useState<number | null>(null);
+  const [submitStatus, setSubmitStatus] = useState<{
+    type: "success" | "error" | null;
+    message: string;
+  }>({ type: null, message: "" });
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -21,8 +26,11 @@ export default function Home() {
     }));
   };
   
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    
+    // Reset status
+    setSubmitStatus({ type: null, message: "" });
     
     // Calculate the quote
     const basePrice = formData.quantity * 100;
@@ -30,6 +38,60 @@ export default function Home() {
     const totalPrice = basePrice * complexityMultiplier;
     
     setQuoteResult(totalPrice);
+    
+    // Insert data into Supabase
+    try {
+      // Check if Supabase is properly initialized
+      if (!supabase) {
+        console.error("Supabase client is not initialized");
+        setSubmitStatus({
+          type: "error",
+          message: "Database connection not available"
+        });
+        return;
+      }
+      
+      console.log("Attempting to insert data:", {
+        part_type: formData.partType,
+        material: formData.material,
+        quantity: formData.quantity,
+        complexity: formData.complexity,
+        deadline: formData.deadline,
+        quote_amount: totalPrice
+      });
+      
+      const { data, error } = await supabase
+        .from("jobs")
+        .insert({
+          part_type: formData.partType,
+          material: formData.material,
+          quantity: formData.quantity,
+          complexity: formData.complexity,
+          deadline: formData.deadline,
+          quote_amount: totalPrice
+        })
+        .select();
+      
+      if (error) {
+        console.error("Error inserting into Supabase:", error);
+        setSubmitStatus({
+          type: "error",
+          message: `Failed to save quote: ${error.message || JSON.stringify(error)}`
+        });
+      } else {
+        console.log("Successfully inserted quote into Supabase:", data);
+        setSubmitStatus({
+          type: "success",
+          message: "Quote successfully saved to database"
+        });
+      }
+    } catch (err) {
+      console.error("Exception during Supabase insert:", err);
+      setSubmitStatus({
+        type: "error",
+        message: `An unexpected error occurred: ${err instanceof Error ? err.message : String(err)}`
+      });
+    }
   };
 
   return (
@@ -53,6 +115,7 @@ export default function Home() {
               value={formData.partType}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-slate-300 shadow-sm px-4 py-2 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition duration-150 ease-in-out"
+              required
             />
           </div>
           
@@ -68,6 +131,7 @@ export default function Home() {
               value={formData.material}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-slate-300 shadow-sm px-4 py-2 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition duration-150 ease-in-out"
+              required
             />
           </div>
           
@@ -84,6 +148,7 @@ export default function Home() {
               value={formData.quantity}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-slate-300 shadow-sm px-4 py-2 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition duration-150 ease-in-out"
+              required
             />
           </div>
           
@@ -97,6 +162,7 @@ export default function Home() {
               value={formData.complexity}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-slate-300 shadow-sm px-4 py-2 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition duration-150 ease-in-out"
+              required
             >
               <option value="">Select complexity</option>
               <option value="low">Low</option>
@@ -116,6 +182,7 @@ export default function Home() {
               value={formData.deadline}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-slate-300 shadow-sm px-4 py-2 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition duration-150 ease-in-out"
+              required
             />
           </div>
           
@@ -128,6 +195,16 @@ export default function Home() {
             </button>
           </div>
         </form>
+        
+        {submitStatus.type && (
+          <div className={`mt-4 p-3 rounded-md ${
+            submitStatus.type === "success" 
+              ? "bg-green-50 border border-green-100 text-green-800" 
+              : "bg-red-50 border border-red-100 text-red-800"
+          }`}>
+            {submitStatus.message}
+          </div>
+        )}
         
         {quoteResult !== null && (
           <div className="mt-6 p-4 bg-indigo-50 border border-indigo-100 rounded-md">
@@ -143,13 +220,15 @@ export default function Home() {
   );
 }
 
-// Add interactivity to the quote form:
-// - Use React useState to track form inputs: partType, material, quantity, complexity, deadline
-// - Add a handleSubmit function (on form submit):
-//   - Prevent default behavior
-//   - Calculate a fake quote: quantity * 100 * (1.5 if complexity is High)
-//   - Show the quote below the form using a <div> with the result
-// - Keep the UI clean — show quote only after submission
-// - Do not connect to Supabase yet
+// PART 3 — Connect quote form to Supabase
+// - Import supabase client from @/lib/supabase
+// - Inside handleSubmit:
+//   - Calculate the quote as before
+//   - Insert a new row into the "jobs" table with:
+//     part_type, material, quantity, complexity, deadline, quote_amount
+//   - Log an error if the insert fails
+//   - Log a success message if it works
+// - Keep the existing UI and state logic
+// - Stop here after inserting into Supabase
 
 
