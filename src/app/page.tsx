@@ -1,7 +1,19 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { supabase } from "./supabase";
+
+// Define the Job type
+type Job = {
+  id: string;
+  part_type: string;
+  material: string;
+  quantity: number;
+  complexity: string;
+  deadline: string;
+  quote_amount: number;
+  created_at: string;
+};
 
 export default function Home() {
   const [formData, setFormData] = useState({
@@ -17,6 +29,34 @@ export default function Home() {
     type: "success" | "error" | null;
     message: string;
   }>({ type: null, message: "" });
+  const [recentJobs, setRecentJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Fetch recent jobs when component mounts
+  useEffect(() => {
+    async function fetchRecentJobs() {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("jobs")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(5);
+          
+        if (error) {
+          console.error("Error fetching recent jobs:", error);
+        } else {
+          setRecentJobs(data || []);
+        }
+      } catch (err) {
+        console.error("Exception during fetch:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchRecentJobs();
+  }, [quoteResult]); // Refetch when a new quote is generated
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -94,8 +134,16 @@ export default function Home() {
     }
   };
 
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
   return (
-    <div className="flex justify-center py-8 px-4 sm:px-6 lg:px-8">
+    <div className="flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl w-full space-y-8 bg-white p-8 rounded-lg shadow-sm border border-slate-200">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Quote a Job</h1>
@@ -209,10 +257,60 @@ export default function Home() {
         {quoteResult !== null && (
           <div className="mt-6 p-4 bg-indigo-50 border border-indigo-100 rounded-md">
             <h2 className="text-lg font-medium text-indigo-800">Your Quote</h2>
-            <p className="mt-2 text-3xl font-bold text-indigo-900">${quoteResult.toFixed(2)}</p>
+            <p className="mt-2 text-3xl font-bold text-indigo-900">{formatCurrency(quoteResult)}</p>
             <p className="mt-1 text-sm text-indigo-600">
               Based on {formData.quantity} units of {formData.complexity || "standard"} complexity
             </p>
+          </div>
+        )}
+      </div>
+      
+      {/* Recent Quotes Section */}
+      <div className="max-w-2xl w-full mt-8 bg-white p-8 rounded-lg shadow-sm border border-slate-200">
+        <h2 className="text-xl font-bold text-slate-900 mb-4">Recent Quotes</h2>
+        
+        {isLoading ? (
+          <div className="text-center py-4 text-slate-500">Loading recent quotes...</div>
+        ) : recentJobs.length === 0 ? (
+          <div className="text-center py-4 text-slate-500">No quotes found. Create your first one!</div>
+        ) : (
+          <div className="overflow-hidden">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Part Type
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Material
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Quantity
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Quote
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-slate-200">
+                {recentJobs.map((job) => (
+                  <tr key={job.id} className="hover:bg-slate-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                      {job.part_type}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                      {job.material}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                      {job.quantity}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
+                      {formatCurrency(job.quote_amount)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
@@ -220,15 +318,14 @@ export default function Home() {
   );
 }
 
-// PART 3 — Connect quote form to Supabase
-// - Import supabase client from @/lib/supabase
-// - Inside handleSubmit:
-//   - Calculate the quote as before
-//   - Insert a new row into the "jobs" table with:
-//     part_type, material, quantity, complexity, deadline, quote_amount
-//   - Log an error if the insert fails
-//   - Log a success message if it works
-// - Keep the existing UI and state logic
-// - Stop here after inserting into Supabase
+// PART 4 — Show recent quotes from Supabase
+// - Import supabase client
+// - Add useEffect to fetch the latest 5 jobs from the "jobs" table, ordered by created_at DESC
+// - Store them in a state variable like `jobs`
+// - Below the form, add a section called "Recent Quotes"
+// - Display a clean list: part_type, material, quantity, quote_amount
+// - Use Tailwind to make it simple and readable
+// - Stop after rendering the list. We'll add filtering or delete buttons later.
+
 
 
