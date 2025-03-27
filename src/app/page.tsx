@@ -47,63 +47,41 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-slate-900 text-center mb-12">
+      {/* Feature Tiles Section */}
+      <section className="py-16 px-8 bg-gradient-to-br from-indigo-900 to-black">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-white text-center mb-12">
             Streamline Your Manufacturing Process
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-              <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mb-4">
-                <svg className="w-5 h-5 text-indigo-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M7.75 12L10.58 14.83L16.25 9.17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <div className="bg-slate-800/50 p-8 rounded-xl shadow-md border border-slate-700 transition-all duration-300 hover:shadow-lg hover:bg-slate-800/70">
+              <div className="flex justify-center mb-6">
+                <svg className="w-10 h-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 16.5m14.8-1.2c.7.669 1.2 1.535 1.2 2.5s-.5 1.831-1.2 2.5c-.7.669-1.667 1.2-2.5 1.2H6.7c-.833 0-1.8-.531-2.5-1.2-.7-.669-1.2-1.535-1.2-2.5s.5-1.831 1.2-2.5c.7-.669 1.667-1.2 2.5-1.2h9.6c.833 0 1.8.531 2.5 1.2z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                Instant Quotes
-              </h3>
-              <p className="text-slate-600">
-                Get accurate manufacturing quotes in seconds, not days. Our advanced algorithms calculate costs based on materials, complexity, and timeline.
-              </p>
+              <h3 className="text-xl font-bold text-white mb-4">Quote Smarter</h3>
+              <p className="text-slate-300">Generate accurate quotes in seconds with our AI-powered pricing engine that accounts for materials, labor, and timeline.</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-              <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mb-4">
-                <svg className="w-5 h-5 text-indigo-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8 2V5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M16 2V5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M3.5 9.09H20.5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M15.6947 13.7H15.7037" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M15.6947 16.7H15.7037" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M11.9955 13.7H12.0045" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M11.9955 16.7H12.0045" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M8.29431 13.7H8.30329" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M8.29431 16.7H8.30329" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            
+            <div className="bg-slate-800/50 p-8 rounded-xl shadow-md border border-slate-700 transition-all duration-300 hover:shadow-lg hover:bg-slate-800/70">
+              <div className="flex justify-center mb-6">
+                <svg className="w-10 h-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                Smart Scheduling
-              </h3>
-              <p className="text-slate-600">
-                Optimize your production pipeline with AI-powered scheduling that maximizes equipment utilization and minimizes downtime.
-              </p>
+              <h3 className="text-xl font-bold text-white mb-4">Schedule Efficiently</h3>
+              <p className="text-slate-300">Eliminate production bottlenecks with intelligent scheduling that optimizes your factory's capacity and resource allocation.</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-              <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mb-4">
-                <svg className="w-5 h-5 text-indigo-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M12 16V10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M12 8V7.99" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            
+            <div className="bg-slate-800/50 p-8 rounded-xl shadow-md border border-slate-700 transition-all duration-300 hover:shadow-lg hover:bg-slate-800/70">
+              <div className="flex justify-center mb-6">
+                <svg className="w-10 h-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                Real-time Insights
-              </h3>
-              <p className="text-slate-600">
-                Monitor your production process with live dashboards showing active jobs, resource allocation, and production efficiency metrics.
-              </p>
+              <h3 className="text-xl font-bold text-white mb-4">Deliver On Time</h3>
+              <p className="text-slate-300">Track production progress in real-time and anticipate delays before they happen, ensuring consistent on-time delivery.</p>
             </div>
           </div>
         </div>
@@ -130,14 +108,11 @@ export default function Home() {
   );
 }
 
-// Redesign the hero section with a modern SaaS gradient background:
-// - Use a full-screen background with a dark-to-blue ocean-like gradient
-//   e.g., from-indigo-900 via-blue-800 to-black or similar
-// - Add a subtle glow or fade to the background (optional Tailwind blur or backdrop)
-// - Ensure text color contrasts well (white or slate-100)
-// - Keep content centered (flex, min-h-screen, etc.)
-// - Add Tailwind transitions or AOS to fade in headline, subheadline, and button
-// - Stop after applying the background and animation — do not touch the rest of the page
+
+
+
+
+
 
 
 
