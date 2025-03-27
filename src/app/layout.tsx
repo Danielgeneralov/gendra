@@ -67,7 +67,7 @@ export default function RootLayout({
             </nav>
           </div>
         </header>
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+        <main className="w-full">
           {children}
         </main>
       </body>
@@ -75,11 +75,10 @@ export default function RootLayout({
   );
 }
 
-// PART 6 — Add a top navigation bar to layout.tsx
-// - Use Tailwind CSS to create a clean, modern nav bar
-// - Include links to: Home (/), Quote (/quote), Schedule (/schedule), Dashboard (/dashboard)
-// - Style the links with hover effects and spacing
-// - Make the nav stick to the top with a shadow and white background
-// - Use next/link for routing
-// - Wrap children content in a responsive container (max-w-4xl)
-// - Stop after rendering the nav and layout shell
+// Update the layout.tsx file to:
+// - Remove any max-w-* constraints from the main container
+// - Ensure the layout allows full-width sections like the homepage hero
+// - Use a simple <main className="w-full"> wrapper
+// - Do not apply center constraints like mx-auto
+// - Stop after fixing layout container only
+

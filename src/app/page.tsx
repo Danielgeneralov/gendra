@@ -5,48 +5,50 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-800 to-slate-900 text-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-12">
-            <div className="md:max-w-xl">
-              <h1 className="text-4xl lg:text-5xl font-bold tracking-tight">
-                Smart Manufacturing Starts Here
-              </h1>
-              <p className="mt-6 text-lg text-slate-300">
-                FactoryFlow helps manufacturers streamline operations, reduce costs, and deliver products faster with our intelligent factory management platform.
-              </p>
-              <div className="mt-10 flex flex-col sm:flex-row gap-4">
-                <Link 
-                  href="/quote" 
-                  className="bg-indigo-600 hover:bg-indigo-700 rounded-lg px-6 py-3 text-base font-medium text-white transition-colors duration-200 ease-in-out"
-                >
-                  Get a Quote
-                </Link>
-                <Link 
-                  href="/dashboard" 
-                  className="bg-slate-700 hover:bg-slate-600 rounded-lg px-6 py-3 text-base font-medium text-white transition-colors duration-200 ease-in-out"
-                >
-                  View Dashboard
-                </Link>
-              </div>
-            </div>
-            <div className="relative w-full md:w-96 h-80 md:h-96">
-              <div className="absolute inset-0 bg-indigo-500 rounded-lg opacity-20 blur-xl"></div>
-              <div className="relative z-10 w-full h-full rounded-lg overflow-hidden border border-slate-700 bg-slate-800 flex items-center justify-center">
-                <svg className="w-40 h-40 text-indigo-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M21 7V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V7C3 4 4.5 2 8 2H16C19.5 2 21 4 21 7Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M14.5 4.5V6.5C14.5 7.6 15.4 8.5 16.5 8.5H18.5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M8 10H16" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M8 14H13" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
+      <section className="min-h-screen w-full flex items-center justify-center relative px-8 md:px-12 py-16 md:py-24 bg-gradient-to-br from-indigo-900 via-blue-800 to-black overflow-hidden">
+        {/* Subtle glow effect */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-20 -left-20 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-40 right-20 w-80 h-80 bg-indigo-600/20 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="w-full text-center relative z-10">
+          <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-8 animate-[fadeIn_1.2s_ease-in-out] opacity-0 animation-fill-mode-forwards animation-delay-300">
+            Quote and schedule jobs <span className="text-blue-400">10x faster</span>
+          </h1>
+          <p className="text-xl md:text-2xl text-slate-100 mx-auto mb-12 max-w-3xl animate-[fadeIn_1.2s_ease-in-out] opacity-0 animation-fill-mode-forwards animation-delay-600">
+            FactoryFlow helps fabrication shops eliminate spreadsheets and streamline their workflow
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-6 animate-[fadeIn_1.2s_ease-in-out] opacity-0 animation-fill-mode-forwards animation-delay-900">
+            <Link 
+              href="/quote" 
+              className="bg-blue-500 hover:bg-blue-400 transition-colors duration-300 rounded-lg px-8 py-4 text-lg font-medium text-white shadow-lg hover:translate-y-[-2px] hover:shadow-xl transition-all"
+            >
+              Try the Quoting Tool
+            </Link>
+            <Link 
+              href="/dashboard" 
+              className="bg-transparent hover:bg-white/10 border border-white/30 transition-colors duration-300 rounded-lg px-8 py-4 text-lg font-medium text-white hover:translate-y-[-2px] hover:shadow-md transition-all"
+            >
+              See the Dashboard
+            </Link>
+          </div>
+          
+          {/* Trust badges */}
+          <div className="mt-20 flex flex-col items-center animate-[fadeIn_1.2s_ease-in-out] opacity-0 animation-fill-mode-forwards animation-delay-1200">
+            <p className="text-sm uppercase tracking-wider text-slate-300 mb-4">Trusted by manufacturing leaders</p>
+            <div className="flex flex-wrap justify-center gap-x-12 gap-y-6">
+              <div className="h-6 w-24 bg-white/10 rounded"></div>
+              <div className="h-6 w-24 bg-white/10 rounded"></div>
+              <div className="h-6 w-24 bg-white/10 rounded"></div>
+              <div className="h-6 w-24 bg-white/10 rounded"></div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50">
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl font-bold text-slate-900 text-center mb-12">
             Streamline Your Manufacturing Process
@@ -108,7 +110,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-slate-900 mb-6">
             Ready to Transform Your Factory?
@@ -127,6 +129,18 @@ export default function Home() {
     </div>
   );
 }
+
+// Redesign the hero section with a modern SaaS gradient background:
+// - Use a full-screen background with a dark-to-blue ocean-like gradient
+//   e.g., from-indigo-900 via-blue-800 to-black or similar
+// - Add a subtle glow or fade to the background (optional Tailwind blur or backdrop)
+// - Ensure text color contrasts well (white or slate-100)
+// - Keep content centered (flex, min-h-screen, etc.)
+// - Add Tailwind transitions or AOS to fade in headline, subheadline, and button
+// - Stop after applying the background and animation — do not touch the rest of the page
+
+
+
 
 
 
