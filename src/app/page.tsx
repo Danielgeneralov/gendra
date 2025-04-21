@@ -126,7 +126,7 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-2xl font-light tracking-tight text-slate-900 mb-4">Schedule Efficiently</h3>
-              <p className="text-slate-600 leading-relaxed">Eliminate production bottlenecks with intelligent scheduling that optimizes your factory's capacity and resource allocation.</p>
+              <p className="text-slate-600 leading-relaxed">Eliminate production bottlenecks with intelligent scheduling that optimizes your factory&rsquo;s capacity and resource allocation.</p>
             </div>
             
             <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-100 transition-all duration-300 hover:shadow-md hover:bg-white animate-[fadeIn_1.2s_ease-in-out] opacity-0 animation-fill-mode-forwards animation-delay-900">
@@ -164,21 +164,6 @@ export default function Home() {
     </div>
   );
 }
-
-// Replace the existing image block beneath the hero (currently using <img src="/factoryflow_trial_img.svg" />) with a Lottie animation
-// - Import Lottie from "lottie-react" at the top of the file
-// - Import the animation JSON from: "../../public/factoryflow_animation.json"
-// - Use the <Lottie /> component to render the animation instead of the <img>
-// - Set loop={true}
-// - Add className: w-[90%] max-w-4xl h-auto mx-auto
-// - Wrap the Lottie component in a <div> with: mt-16, w-full, flex, justify-center, and data-aos="fade-up"
-// - Remove the old <img> and placeholder content entirely
-// - Keep spacing and scroll flow smooth — this should still feel like part of the hero section, not a new one
-
-
-
-
-
 
 
 
