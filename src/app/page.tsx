@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Home() {
   return (
@@ -46,9 +47,12 @@ export default function Home() {
           
           {/* Hero visual */}
           <div className="mt-16 w-full flex justify-center" data-aos="fade-up">
-            <img 
+            <Image 
               src="/factoryflow_trial_img.svg" 
-              alt="FactoryFlow Manufacturing Dashboard" 
+              alt="FactoryFlow Manufacturing Dashboard"
+              width={1200}
+              height={800}
+              priority
               className="w-[90%] max-w-4xl h-auto transition-transform duration-700 hover:scale-105"
             />
           </div>
@@ -126,7 +130,7 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-2xl font-light tracking-tight text-slate-900 mb-4">Schedule Efficiently</h3>
-              <p className="text-slate-600 leading-relaxed">Eliminate production bottlenecks with intelligent scheduling that optimizes your factory's capacity and resource allocation.</p>
+              <p className="text-slate-600 leading-relaxed">Eliminate production bottlenecks with intelligent scheduling that optimizes your factory&rsquo;s capacity and resource allocation.</p>
             </div>
             
             <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-100 transition-all duration-300 hover:shadow-md hover:bg-white animate-[fadeIn_1.2s_ease-in-out] opacity-0 animation-fill-mode-forwards animation-delay-900">
