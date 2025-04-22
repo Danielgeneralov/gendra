@@ -75,10 +75,5 @@ export default function RootLayout({
   );
 }
 
-// Update the layout.tsx file to:
-// - Remove any max-w-* constraints from the main container
-// - Ensure the layout allows full-width sections like the homepage hero
-// - Use a simple <main className="w-full"> wrapper
-// - Do not apply center constraints like mx-auto
-// - Stop after fixing layout container only
+
 
