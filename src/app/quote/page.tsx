@@ -31,6 +31,7 @@ export default function QuotePage() {
   }>({ type: null, message: "" });
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isQuoteLoading, setIsQuoteLoading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   
   // Fetch recent jobs when component mounts
@@ -108,71 +109,104 @@ export default function QuotePage() {
     // Reset status
     setSubmitStatus({ type: null, message: "" });
     setValidationError(null);
+    setQuoteResult(null);
     
     // Validate form
     if (!validateForm()) {
       return;
     }
     
-    // Calculate the quote
-    const basePrice = formData.quantity * 100;
-    const complexityMultiplier = formData.complexity === "high" ? 1.5 : 1;
-    const totalPrice = basePrice * complexityMultiplier;
+    // Start loading state
+    setIsQuoteLoading(true);
     
-    setQuoteResult(totalPrice);
-    
-    // Insert data into Supabase
     try {
-      // Check if Supabase is properly initialized
-      if (!supabase) {
-        console.error("Supabase client is not initialized");
-        setSubmitStatus({
-          type: "error",
-          message: "Database connection not available"
-        });
-        return;
-      }
-      
-      console.log("Attempting to insert data:", {
-        part_type: formData.partType,
-        material: formData.material,
-        quantity: formData.quantity,
-        complexity: formData.complexity,
-        deadline: formData.deadline,
-        quote_amount: totalPrice
+      // Send request to FastAPI backend
+      const response = await fetch('http://localhost:8000/predict-quote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        mode: 'cors',
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          material: formData.material,
+          quantity: formData.quantity,
+          complexity: formData.complexity === 'high' ? 1.5 : 
+                      formData.complexity === 'medium' ? 1.0 : 
+                      formData.complexity === 'low' ? 0.5 : 1.0,
+        }),
       });
       
-      const { data, error } = await supabase
-        .from("jobs")
-        .insert({
+      if (!response.ok) {
+        console.error('API response not OK:', response.status, response.statusText);
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setQuoteResult(data.quote);
+      
+      // Insert data into Supabase
+      try {
+        // Check if Supabase is properly initialized
+        if (!supabase) {
+          console.error("Supabase client is not initialized");
+          setSubmitStatus({
+            type: "error",
+            message: "Database connection not available"
+          });
+          return;
+        }
+        
+        console.log("Attempting to insert data:", {
           part_type: formData.partType,
           material: formData.material,
           quantity: formData.quantity,
           complexity: formData.complexity,
           deadline: formData.deadline,
-          quote_amount: totalPrice
-        })
-        .select();
-      
-      if (error) {
-        console.error("Error inserting into Supabase:", error);
+          quote_amount: data.quote
+        });
+        
+        const { data: supabaseData, error } = await supabase
+          .from("jobs")
+          .insert({
+            part_type: formData.partType,
+            material: formData.material,
+            quantity: formData.quantity,
+            complexity: formData.complexity,
+            deadline: formData.deadline,
+            quote_amount: data.quote
+          })
+          .select();
+        
+        if (error) {
+          console.error("Error inserting into Supabase:", error);
+          setSubmitStatus({
+            type: "error",
+            message: `Failed to save quote: ${error.message || JSON.stringify(error)}`
+          });
+        } else {
+          console.log("Successfully inserted quote into Supabase:", supabaseData);
+          setSubmitStatus({
+            type: "success",
+            message: "Quote submitted successfully! Your job request has been saved."
+          });
+        }
+      } catch (err) {
+        console.error("Exception during Supabase insert:", err);
         setSubmitStatus({
           type: "error",
-          message: `Failed to save quote: ${error.message || JSON.stringify(error)}`
-        });
-      } else {
-        console.log("Successfully inserted quote into Supabase:", data);
-        setSubmitStatus({
-          type: "success",
-          message: "Quote submitted successfully! Your job request has been saved."
+          message: `An unexpected error occurred: ${err instanceof Error ? err.message : String(err)}`
         });
       }
     } catch (err) {
-      console.error("Exception during Supabase insert:", err);
+      console.error("Error fetching quote from backend:", err);
       setSubmitStatus({
-        type: "error",
-        message: `An unexpected error occurred: ${err instanceof Error ? err.message : String(err)}`
+        type: "error", 
+        message: "Error generating quote"
       });
+    } finally {
+      setIsQuoteLoading(false);
     }
   };
 
@@ -335,7 +369,7 @@ export default function QuotePage() {
           </div>
         )}
         
-        {quoteResult !== null && (
+        {quoteResult !== null ? (
           <div className="mt-6 p-4 bg-indigo-50 border border-indigo-100 rounded-md">
             <h2 className="text-lg font-medium text-indigo-800">Your Quote</h2>
             <p className="mt-2 text-3xl font-bold text-indigo-900">{formatCurrency(quoteResult)}</p>
@@ -343,7 +377,17 @@ export default function QuotePage() {
               Based on {formData.quantity} units of {formData.complexity || "standard"} complexity
             </p>
           </div>
-        )}
+        ) : isQuoteLoading ? (
+          <div className="mt-6 p-4 bg-indigo-50 border border-indigo-100 rounded-md">
+            <h2 className="text-lg font-medium text-indigo-800">Generating Quote...</h2>
+            <div className="mt-2 flex justify-center">
+              <svg className="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+          </div>
+        ) : null}
       </div>
       
       {/* Recent Quotes Section */}
