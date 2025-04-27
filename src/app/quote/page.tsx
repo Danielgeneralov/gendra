@@ -189,7 +189,7 @@ export default function QuotePage() {
       <div className="max-w-2xl w-full space-y-8 bg-white p-8 rounded-lg shadow-sm border border-slate-200">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Intelligent Quoting</h1>
-          <p className="mt-2 text-sm text-slate-500">Generate accurate quotes in minutes with Gendra's AI-powered pricing engine.</p>
+          <p className="mt-2 text-sm text-slate-500">Generate accurate quotes in minutes with Gendra AI-powered pricing engine.</p>
         </div>
         
         {validationError && (
