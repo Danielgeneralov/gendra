@@ -2,6 +2,7 @@
 
 import { useState, FormEvent, useEffect } from "react";
 import { supabase } from "../supabase";
+import { fetchQuote } from "./api";
 
 // Define the Job type
 type Job = {
@@ -120,30 +121,19 @@ export default function QuotePage() {
     setIsQuoteLoading(true);
     
     try {
-      // Send request to FastAPI backend
-      const response = await fetch('http://localhost:8000/predict-quote', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        mode: 'cors',
-        credentials: 'same-origin',
-        body: JSON.stringify({
-          material: formData.material,
-          quantity: formData.quantity,
-          complexity: formData.complexity === 'high' ? 1.5 : 
-                      formData.complexity === 'medium' ? 1.0 : 
-                      formData.complexity === 'low' ? 0.5 : 1.0,
-        }),
-      });
+      // Map complexity string to numeric value
+      const complexityValue = 
+        formData.complexity === 'high' ? 1.5 : 
+        formData.complexity === 'medium' ? 1.0 : 
+        formData.complexity === 'low' ? 0.5 : 1.0;
       
-      if (!response.ok) {
-        console.error('API response not OK:', response.status, response.statusText);
-        throw new Error(`API request failed with status ${response.status}`);
-      }
+      // Call the modularized fetchQuote function
+      const data = await fetchQuote(
+        formData.material,
+        formData.quantity,
+        complexityValue
+      );
       
-      const data = await response.json();
       setQuoteResult(data.quote);
       
       // Insert data into Supabase
