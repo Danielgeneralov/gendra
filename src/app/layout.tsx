@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FactoryFlow",
-  description: "Modern factory management solution",
+  title: "Gendra",
+  description: "AI-powered intelligence for modern manufacturing",
 };
 
 export default function RootLayout({
@@ -33,7 +33,7 @@ export default function RootLayout({
             <nav className="flex items-center justify-between h-16">
               <div className="flex-shrink-0">
                 <Link href="/" className="text-slate-900 font-medium text-xl">
-                  FactoryFlow
+                  Gendra
                 </Link>
               </div>
               <div className="hidden md:block">

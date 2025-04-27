@@ -188,8 +188,8 @@ export default function QuotePage() {
     <div className="flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl w-full space-y-8 bg-white p-8 rounded-lg shadow-sm border border-slate-200">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Quote a Job</h1>
-          <p className="mt-2 text-sm text-slate-500">Fill out the form below to get an instant quote for your job.</p>
+          <h1 className="text-2xl font-bold text-slate-900">Intelligent Quoting</h1>
+          <p className="mt-2 text-sm text-slate-500">Generate accurate quotes in minutes with Gendra's AI-powered pricing engine.</p>
         </div>
         
         {validationError && (
