@@ -1,4 +1,6 @@
 // Types for the quote API
+import { BACKEND_URL } from './constants';
+
 export interface QuoteRequest {
   material: string;
   quantity: number;
@@ -22,7 +24,7 @@ export async function fetchQuote(
   complexityValue: number
 ): Promise<QuoteResponse> {
   try {
-    const response = await fetch('http://localhost:8000/predict-quote', {
+    const response = await fetch(`${BACKEND_URL}/predict-quote`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
