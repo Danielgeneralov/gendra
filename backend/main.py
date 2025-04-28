@@ -5,6 +5,15 @@ from fastapi.middleware.cors import CORSMiddleware
 import random
 import numpy as np
 from sklearn.linear_model import LinearRegression
+import joblib
+import os
+import logging
+from pathlib import Path
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("gendra-backend")
 
 app = FastAPI(title="Gendra Backend API")
 
@@ -36,9 +45,13 @@ MATERIAL_MULTIPLIERS = {
     'default': 1.0
 }
 
-# Function to create a dataset and train a linear regression model
+# Define model file path
+MODEL_PATH = Path(__file__).parent / "model.pkl"
+
 def train_quote_model():
     """Creates a synthetic dataset and trains a linear regression model for quote prediction"""
+    
+    logger.info("Training new quote prediction model...")
     
     # Generate synthetic dataset
     # Features: quantity, complexity
@@ -90,9 +103,9 @@ def train_quote_model():
     model = LinearRegression()
     model.fit(X, y)
     
-    print(f"Model trained with {len(X)} samples")
-    print(f"Coefficients: {model.coef_}")
-    print(f"Intercept: {model.intercept_}")
+    logger.info(f"Model trained with {len(X)} samples")
+    logger.info(f"Coefficients: {model.coef_}")
+    logger.info(f"Intercept: {model.intercept_}")
     
     # Validate model on a few test points
     test_points = [
@@ -102,14 +115,64 @@ def train_quote_model():
         [1000, 1.0]  # 1000 quantity, medium complexity
     ]
     predictions = model.predict(test_points)
-    print("\nModel validation:")
+    logger.info("\nModel validation:")
     for i, (point, pred) in enumerate(zip(test_points, predictions)):
-        print(f"Test {i+1}: Qty={point[0]}, Complexity={point[1]} → Predicted quote: ${pred:.2f}")
+        logger.info(f"Test {i+1}: Qty={point[0]}, Complexity={point[1]} → Predicted quote: ${pred:.2f}")
     
     return model
 
-# Train the model when the application starts
-quote_model = train_quote_model()
+def save_model(model, filepath=MODEL_PATH):
+    """Save the trained model to a file using joblib"""
+    try:
+        directory = os.path.dirname(filepath)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            
+        joblib.dump(model, filepath)
+        logger.info(f"Model saved successfully to {filepath}")
+        return True
+    except Exception as e:
+        logger.error(f"Error saving model: {str(e)}")
+        return False
+
+def load_model(filepath=MODEL_PATH):
+    """Load a trained model from a file using joblib"""
+    try:
+        model = joblib.load(filepath)
+        logger.info(f"Model loaded successfully from {filepath}")
+        
+        # Perform a quick validation on the loaded model
+        test_point = np.array([[10, 1.0]])  # 10 quantity, medium complexity
+        prediction = model.predict(test_point)[0]
+        logger.info(f"Model test prediction: Qty=10, Complexity=1.0 → ${prediction:.2f}")
+        
+        return model
+    except Exception as e:
+        logger.error(f"Error loading model: {str(e)}")
+        return None
+
+def get_quote_model():
+    """Get the quote prediction model, either by loading from file or training a new one"""
+    
+    # Check if model file exists
+    if os.path.exists(MODEL_PATH):
+        logger.info(f"Found existing model at {MODEL_PATH}")
+        model = load_model()
+        
+        # If loading fails, train a new model
+        if model is None:
+            logger.warning("Loading model failed, training a new one")
+            model = train_quote_model()
+            save_model(model)
+    else:
+        logger.info("No existing model found, training a new one")
+        model = train_quote_model()
+        save_model(model)
+    
+    return model
+
+# Get the model when the application starts
+quote_model = get_quote_model()
 
 @app.get("/")
 async def root():
@@ -141,6 +204,27 @@ async def predict_quote(request: QuoteRequest):
     final_quote = max(50.0, final_quote)
     
     return {"quote": final_quote}
+
+# Endpoint to retrain model if needed
+@app.post("/admin/retrain-model")
+async def retrain_model():
+    """Admin endpoint to force model retraining"""
+    global quote_model
+    
+    try:
+        # Train a new model
+        new_model = train_quote_model()
+        
+        # Save the model
+        if save_model(new_model):
+            # Update the global model reference
+            quote_model = new_model
+            return {"status": "success", "message": "Model retrained and saved successfully"}
+        else:
+            return {"status": "error", "message": "Failed to save retrained model"}
+    except Exception as e:
+        logger.error(f"Error retraining model: {str(e)}")
+        return {"status": "error", "message": f"Error retraining model: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn
