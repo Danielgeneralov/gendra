@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { ScrollAnimation } from "./components/ScrollAnimation";
 import { MotionButton } from "./components/MotionButton";
-import { MotionCard } from "./components/MotionCard";
 import { ParallaxHero } from "./components/ParallaxHero";
 import { DemoModal } from "./components/DemoModal";
 import { motion } from "framer-motion";
