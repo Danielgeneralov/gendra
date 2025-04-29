@@ -1,63 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { ScrollAnimation } from "./components/ScrollAnimation";
+import { MotionButton } from "./components/MotionButton";
+import { MotionCard } from "./components/MotionCard";
+import { ParallaxHero } from "./components/ParallaxHero";
 
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <section className="min-h-screen w-full flex flex-col items-center justify-center relative px-8 md:px-12 py-32 bg-gradient-to-b from-indigo-900 via-purple-900 to-slate-950 overflow-hidden">
-        {/* Subtle glow effect */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-20 -left-20 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-40 right-20 w-80 h-80 bg-indigo-600/20 rounded-full blur-3xl"></div>
-        </div>
-        
-        <div className="w-full text-center relative z-10">
-          <ScrollAnimation delay={0.1}>
-            <h1 className="text-5xl md:text-6xl font-light tracking-tight text-white mb-8">
-              Intelligent quoting & scheduling for <span className="text-blue-500">modern manufacturing</span>
-            </h1>
-          </ScrollAnimation>
-          
-          <ScrollAnimation delay={0.2}>
-            <p className="text-xl md:text-2xl text-slate-100 mx-auto mb-12 max-w-3xl leading-relaxed">
-              Gendra is your factory operating system powered by AI and real-time data analysis
-            </p>
-          </ScrollAnimation>
-          
-          <ScrollAnimation delay={0.3}>
-            <div className="flex flex-col sm:flex-row justify-center gap-6">
-              <Link 
-                href="/quote" 
-                className="bg-blue-600 hover:bg-blue-700 transition-colors duration-300 rounded-lg px-8 py-4 text-lg font-medium text-white shadow-lg hover:translate-y-[-2px] hover:shadow-xl transition-all"
-              >
-                See Quoting Platform
-              </Link>
-              <Link 
-                href="/dashboard" 
-                className="bg-transparent hover:bg-white/10 border border-white/30 transition-colors duration-300 rounded-lg px-8 py-4 text-lg font-medium text-white hover:translate-y-[-2px] hover:shadow-md transition-all"
-              >
-                Explore Dashboard
-              </Link>
-            </div>
-          </ScrollAnimation>
-          
-          {/* Trust badges */}
-          <ScrollAnimation delay={0.4}>
-            <div className="mt-20 flex flex-col items-center">
-              <p className="text-sm uppercase tracking-wider text-slate-100 mb-4">Trusted by forward-thinking manufacturers</p>
-              <div className="flex flex-wrap justify-center gap-x-12 gap-y-6">
-                <div className="h-6 w-24 bg-white/10 rounded"></div>
-                <div className="h-6 w-24 bg-white/10 rounded"></div>
-                <div className="h-6 w-24 bg-white/10 rounded"></div>
-                <div className="h-6 w-24 bg-white/10 rounded"></div>
-              </div>
-            </div>
-          </ScrollAnimation>
-        </div>
-      </section>
+      {/* Hero Section with Parallax Effects */}
+      <ParallaxHero />
 
       {/* How It Works Section */}
       <section className="py-48 px-8 bg-gradient-to-b from-slate-950 to-slate-900 text-white">
@@ -114,39 +66,42 @@ export default function Home() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <ScrollAnimation delay={0.1}>
-              <div className="bg-slate-800/70 p-8 rounded-xl shadow-md border border-slate-700 transition-all duration-300 hover:bg-slate-800 hover:border-blue-900/50">
-                <div className="flex justify-center mb-6">
+              <MotionCard
+                variant="feature"
+                icon={
                   <svg className="w-10 h-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 16.5m14.8-1.2c.7.669 1.2 1.535 1.2 2.5s-.5 1.831-1.2 2.5c-.7.669-1.667 1.2-2.5 1.2H6.7c-.833 0-1.8-.531-2.5-1.2-.7-.669-1.2-1.535-1.2-2.5s.5-1.831 1.2-2.5c.7-.669 1.667-1.2 2.5-1.2h9.6c.833 0 1.8.531 2.5 1.2z" />
                   </svg>
-                </div>
-                <h3 className="text-2xl font-light tracking-tight text-white mb-4">Intelligent Quoting</h3>
-                <p className="text-slate-300 leading-relaxed">Analyze custom job requirements and generate accurate quotes in minutes with AI that learns from your production data.</p>
-              </div>
+                }
+                title="Intelligent Quoting"
+                description="Analyze custom job requirements and generate accurate quotes in minutes with AI that learns from your production data."
+              />
             </ScrollAnimation>
             
             <ScrollAnimation delay={0.2}>
-              <div className="bg-slate-800/70 p-8 rounded-xl shadow-md border border-slate-700 transition-all duration-300 hover:bg-slate-800 hover:border-blue-900/50">
-                <div className="flex justify-center mb-6">
+              <MotionCard
+                variant="feature"
+                icon={
                   <svg className="w-10 h-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" />
                   </svg>
-                </div>
-                <h3 className="text-2xl font-light tracking-tight text-white mb-4">Dynamic Scheduling</h3>
-                <p className="text-slate-300 leading-relaxed">Optimize your shop floor with scheduling that adapts to changing conditions, constraints, and priorities in real-time.</p>
-              </div>
+                }
+                title="Dynamic Scheduling"
+                description="Optimize your shop floor with scheduling that adapts to changing conditions, constraints, and priorities in real-time."
+              />
             </ScrollAnimation>
             
             <ScrollAnimation delay={0.3}>
-              <div className="bg-slate-800/70 p-8 rounded-xl shadow-md border border-slate-700 transition-all duration-300 hover:bg-slate-800 hover:border-blue-900/50">
-                <div className="flex justify-center mb-6">
+              <MotionCard
+                variant="feature"
+                icon={
                   <svg className="w-10 h-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
                   </svg>
-                </div>
-                <h3 className="text-2xl font-light tracking-tight text-white mb-4">Real-Time Intelligence</h3>
-                <p className="text-slate-300 leading-relaxed">Turn your data into actions with continuous monitoring and AI decision support to optimize operations across your facility.</p>
-              </div>
+                }
+                title="Real-Time Intelligence"
+                description="Turn your data into actions with continuous monitoring and AI decision support to optimize operations across your facility."
+              />
             </ScrollAnimation>
           </div>
         </div>
@@ -168,12 +123,9 @@ export default function Home() {
           </ScrollAnimation>
           
           <ScrollAnimation delay={0.25}>
-            <Link 
-              href="/quote" 
-              className="bg-blue-600 hover:bg-blue-700 transition-colors duration-200 rounded-lg px-8 py-4 text-lg font-medium text-white inline-block hover:shadow-lg border border-blue-500"
-            >
+            <MotionButton href="/quote" primary={true}>
               Start with Gendra
-            </Link>
+            </MotionButton>
           </ScrollAnimation>
         </div>
       </section>

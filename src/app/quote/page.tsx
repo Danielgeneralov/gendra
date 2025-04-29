@@ -4,6 +4,7 @@ import { useState, FormEvent, useEffect } from "react";
 import { supabase } from "../supabase";
 import { fetchQuote } from "./api";
 import { ScrollAnimation } from "../components/ScrollAnimation";
+import { MotionButton } from "../components/MotionButton";
 
 // Define the Job type
 type Job = {
@@ -339,13 +340,14 @@ export default function QuotePage() {
             </ScrollAnimation>
             
             <ScrollAnimation delay={0.6}>
-              <button
+              <MotionButton
                 type="submit"
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                primary
+                className="w-full"
                 disabled={isQuoteLoading}
               >
                 {isQuoteLoading ? "Calculating..." : "Generate Quote"}
-              </button>
+              </MotionButton>
             </ScrollAnimation>
           </form>
           
