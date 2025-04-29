@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, FormEvent, useEffect } from "react";
+import { useState, FormEvent, useEffect, useCallback } from "react";
 import { supabase } from "../supabase";
 import { fetchQuote } from "./api";
 import { ScrollAnimation } from "../components/ScrollAnimation";
 import { MotionButton } from "../components/MotionButton";
+import { GatedQuote } from "../components/GatedQuote";
+import { QuoteEmailModal } from "../components/QuoteEmailModal";
 
 // Define the Job type
 type Job = {
@@ -18,6 +20,17 @@ type Job = {
   created_at: string;
 };
 
+// Set this to true to use modal version, false to use inline version
+const USE_MODAL = true;
+
+// Add this cache object outside the component to cache quotes
+const quoteCache = new Map<string, number>();
+
+// In the QuotePage component, add a cacheKey generation function:
+const generateCacheKey = (material: string, quantity: number, complexity: string): string => {
+  return `${material}_${quantity}_${complexity}`.toLowerCase();
+};
+
 export default function QuotePage() {
   const [formData, setFormData] = useState({
     partType: "",
@@ -29,13 +42,25 @@ export default function QuotePage() {
   
   const [quoteResult, setQuoteResult] = useState<number | null>(null);
   const [submitStatus, setSubmitStatus] = useState<{
-    type: "success" | "error" | null;
+    type: "success" | "error" | "loading" | null;
     message: string;
   }>({ type: null, message: "" });
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
   const [isRecentJobsLoading, setIsRecentJobsLoading] = useState(false);
   const [isQuoteLoading, setIsQuoteLoading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  
+  // Email modal state
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [emailSubmitted, setEmailSubmitted] = useState(false);
+  
+  // Calculate quote range (±10%)
+  const quoteRange = quoteResult
+    ? {
+        min: Math.floor(quoteResult * 0.9),
+        max: Math.ceil(quoteResult * 1.1),
+      }
+    : null;
   
   // Fetch recent jobs when component mounts
   useEffect(() => {
@@ -113,6 +138,7 @@ export default function QuotePage() {
     setSubmitStatus({ type: null, message: "" });
     setValidationError(null);
     setQuoteResult(null);
+    setEmailSubmitted(false);
     
     // Validate form
     if (!validateForm()) {
@@ -129,76 +155,105 @@ export default function QuotePage() {
         formData.complexity === 'medium' ? 1.0 : 
         formData.complexity === 'low' ? 0.5 : 1.0;
       
-      // Call the modularized fetchQuote function
-      const data = await fetchQuote(
-        formData.material,
-        formData.quantity,
-        complexityValue
-      );
+      // Generate cache key
+      const cacheKey = generateCacheKey(formData.material, formData.quantity, formData.complexity);
       
-      setQuoteResult(data.quote);
-      
-      // Insert data into Supabase
-      try {
-        // Check if Supabase is properly initialized
-        if (!supabase) {
-          console.error("Supabase client is not initialized");
-          setSubmitStatus({
-            type: "error",
-            message: "Database connection not available"
-          });
-          return;
-        }
+      // Check if we have a cached result
+      if (quoteCache.has(cacheKey)) {
+        // Use cached quote
+        const cachedQuote = quoteCache.get(cacheKey);
+        console.log("Using cached quote:", cachedQuote);
+        setQuoteResult(cachedQuote || 0);
         
-        console.log("Attempting to insert data:", {
-          part_type: formData.partType,
-          material: formData.material,
-          quantity: formData.quantity,
-          complexity: formData.complexity,
-          deadline: formData.deadline,
-          quote_amount: data.quote
+        // Success notification 
+        setSubmitStatus({
+          type: "success",
+          message: "Quote generated successfully!"
         });
         
-        const { data: supabaseData, error } = await supabase
-          .from("jobs")
-          .insert({
-            part_type: formData.partType,
-            material: formData.material,
-            quantity: formData.quantity,
-            complexity: formData.complexity,
-            deadline: formData.deadline,
-            quote_amount: data.quote
-          })
-          .select();
-        
-        if (error) {
-          console.error("Error inserting into Supabase:", error);
-          setSubmitStatus({
-            type: "error",
-            message: `Failed to save quote: ${error.message || JSON.stringify(error)}`
-          });
-        } else {
-          console.log("Successfully inserted quote into Supabase:", supabaseData);
-          setSubmitStatus({
-            type: "success",
-            message: "Quote submitted successfully! Your job request has been saved."
-          });
+        // If using modal, open it now
+        if (USE_MODAL && !emailSubmitted) {
+          setIsEmailModalOpen(true);
         }
-      } catch (err) {
-        console.error("Exception during Supabase insert:", err);
+      } else {
+        // Show detailed loading message
         setSubmitStatus({
-          type: "error",
-          message: `An unexpected error occurred: ${err instanceof Error ? err.message : String(err)}`
+          type: "loading",
+          message: "Connecting to quote engine... (may take up to 30 seconds on first request)"
+        });
+        
+        // Call the modularized fetchQuote function
+        const data = await fetchQuote(
+          formData.material,
+          formData.quantity,
+          complexityValue
+        );
+        
+        // Cache the result for future use
+        quoteCache.set(cacheKey, data.quote);
+        
+        // Set the quote result but don't save it to Supabase yet
+        // That will happen after email capture
+        setQuoteResult(data.quote);
+        
+        // If using modal, open it now
+        if (USE_MODAL && !emailSubmitted) {
+          setIsEmailModalOpen(true);
+        }
+        
+        // Success notification 
+        setSubmitStatus({
+          type: "success",
+          message: "Quote generated successfully!"
         });
       }
     } catch (err) {
       console.error("Error fetching quote from backend:", err);
       setSubmitStatus({
         type: "error", 
-        message: "Error generating quote"
+        message: "Error generating quote. The server might be starting up - please try again."
       });
     } finally {
       setIsQuoteLoading(false);
+    }
+  };
+  
+  // Handle successful email submission
+  const handleEmailSubmit = (email: string) => {
+    setEmailSubmitted(true);
+    
+    // If we got the email through the modal, we need to insert the data to the jobs table now
+    if (quoteResult && emailSubmitted) {
+      insertJobToSupabase(quoteResult);
+    }
+  };
+  
+  // Insert job to Supabase once email is captured
+  const insertJobToSupabase = async (quoteAmount: number) => {
+    try {
+      if (!supabase) {
+        console.error("Supabase client is not initialized");
+        return;
+      }
+      
+      const { error } = await supabase
+        .from("jobs")
+        .insert({
+          part_type: formData.partType,
+          material: formData.material,
+          quantity: formData.quantity,
+          complexity: formData.complexity,
+          deadline: formData.deadline,
+          quote_amount: quoteAmount
+        });
+      
+      if (error) {
+        console.error("Error inserting job into Supabase:", error);
+      } else {
+        console.log("Successfully inserted job after email capture");
+      }
+    } catch (err) {
+      console.error("Exception during Supabase job insert:", err);
     }
   };
 
@@ -208,6 +263,69 @@ export default function QuotePage() {
       style: "currency",
       currency: "USD",
     }).format(amount);
+  };
+  
+  // Render quote result based on email submission status
+  const renderQuoteResult = () => {
+    if (!quoteResult) return null;
+    
+    if (USE_MODAL) {
+      // In modal mode, we show the exact quote after email submit, otherwise just the range
+      return (
+        <ScrollAnimation delay={0.1}>
+          {emailSubmitted ? (
+            <div className="mt-6 p-4 bg-green-50 border border-green-100 rounded-md">
+              <h2 className="text-lg font-medium text-green-800">Exact Quote</h2>
+              <p className="text-3xl font-bold text-green-700 mt-2">
+                {formatCurrency(quoteResult)}
+              </p>
+              <p className="text-sm text-green-600 mt-2">
+                This quote is valid for 30 days and includes all manufacturing costs.
+              </p>
+              
+              <div className="mt-4 p-3 rounded-md bg-green-100/50 border border-green-100">
+                <h3 className="text-md font-medium text-green-800 mb-1">Production Timeline</h3>
+                <p className="text-sm text-green-700">
+                  Standard production: 7-10 business days
+                </p>
+                <p className="text-sm text-green-700">
+                  Rush production available: 3-5 business days (25% premium)
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-6 p-4 bg-indigo-50 border border-indigo-100 rounded-md">
+              <h2 className="text-lg font-medium text-indigo-800">Quote Range</h2>
+              <p className="text-3xl font-bold text-indigo-700 mt-2">
+                {formatCurrency(quoteRange?.min || 0)} – {formatCurrency(quoteRange?.max || 0)}
+              </p>
+              <p className="text-sm text-indigo-600 mt-2 mb-2">
+                This estimated range is based on your specifications.
+              </p>
+              
+              <MotionButton
+                onClick={() => setIsEmailModalOpen(true)}
+                primary
+                className="w-full mt-4"
+              >
+                Get Exact Quote
+              </MotionButton>
+            </div>
+          )}
+        </ScrollAnimation>
+      );
+    } else {
+      // In inline mode, use the GatedQuote component
+      return (
+        <ScrollAnimation delay={0.1}>
+          <GatedQuote 
+            quoteAmount={quoteResult}
+            isLoading={isQuoteLoading}
+            formData={formData}
+          />
+        </ScrollAnimation>
+      );
+    }
   };
 
   return (
@@ -346,39 +464,48 @@ export default function QuotePage() {
                 className="w-full"
                 disabled={isQuoteLoading}
               >
-                {isQuoteLoading ? "Calculating..." : "Generate Quote"}
+                {isQuoteLoading ? "Calculating Quote..." : "Generate Quote"}
               </MotionButton>
+              {isQuoteLoading && (
+                <p className="text-sm text-slate-500 mt-2 animate-pulse">
+                  {submitStatus.type === "loading" ? 
+                    submitStatus.message : 
+                    "Calculating your quote, please wait..."}
+                </p>
+              )}
             </ScrollAnimation>
           </form>
           
-          {quoteResult !== null && (
-            <ScrollAnimation delay={0.1}>
-              <div className="mt-6 p-4 bg-green-50 border border-green-100 rounded-md">
-                <h2 className="text-lg font-medium text-green-800">Quote Result</h2>
-                <p className="text-3xl font-bold text-green-700 mt-2">
-                  {formatCurrency(quoteResult)}
-                </p>
-                <p className="text-sm text-green-600 mt-2">
-                  This quote is valid for 30 days and includes all manufacturing costs.
-                </p>
+          {/* Loading Message */}
+          {submitStatus.type === "loading" && !isQuoteLoading && (
+            <ScrollAnimation>
+              <div className="p-4 rounded-md bg-blue-50 border border-blue-100 text-blue-700">
+                <div className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <p className="text-sm font-medium">{submitStatus.message}</p>
+                </div>
               </div>
             </ScrollAnimation>
           )}
           
-          {submitStatus.type && (
+          {/* Quote Result Section */}
+          {renderQuoteResult()}
+          
+          {/* Error Message */}
+          {submitStatus.type === "error" && (
             <ScrollAnimation>
               <div 
-                className={`p-4 rounded-md ${
-                  submitStatus.type === "success" 
-                    ? "bg-green-50 border border-green-100 text-green-700" 
-                    : "bg-red-50 border border-red-100 text-red-700"
-                }`}
+                className="p-4 rounded-md bg-red-50 border border-red-100 text-red-700"
               >
                 <p className="text-sm font-medium">{submitStatus.message}</p>
               </div>
             </ScrollAnimation>
           )}
           
+          {/* Recent Jobs Table */}
           {recentJobs.length > 0 && (
             <ScrollAnimation delay={0.3}>
               <div className="mt-8">
@@ -415,6 +542,16 @@ export default function QuotePage() {
           )}
         </div>
       </ScrollAnimation>
+      
+      {/* Email Modal */}
+      <QuoteEmailModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        onEmailSubmit={handleEmailSubmit}
+        quoteRange={quoteRange}
+        formData={formData}
+        quoteAmount={quoteResult}
+      />
     </div>
   );
 } 
