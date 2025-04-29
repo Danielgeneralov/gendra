@@ -33,14 +33,14 @@ export default function QuotePage() {
     message: string;
   }>({ type: null, message: "" });
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isRecentJobsLoading, setIsRecentJobsLoading] = useState(false);
   const [isQuoteLoading, setIsQuoteLoading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   
   // Fetch recent jobs when component mounts
   useEffect(() => {
     async function fetchRecentJobs() {
-      setIsLoading(true);
+      setIsRecentJobsLoading(true);
       try {
         const { data, error } = await supabase
           .from("jobs")
@@ -56,7 +56,7 @@ export default function QuotePage() {
       } catch (err) {
         console.error("Exception during fetch:", err);
       } finally {
-        setIsLoading(false);
+        setIsRecentJobsLoading(false);
       }
     }
     
@@ -382,7 +382,12 @@ export default function QuotePage() {
           {recentJobs.length > 0 && (
             <ScrollAnimation delay={0.3}>
               <div className="mt-8">
-                <h2 className="text-lg font-medium text-slate-900">Recent Quotes</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-medium text-slate-900">Recent Quotes</h2>
+                  {isRecentJobsLoading && (
+                    <span className="text-xs text-slate-500">Loading...</span>
+                  )}
+                </div>
                 <div className="mt-4 overflow-x-auto">
                   <table className="min-w-full divide-y divide-slate-200">
                     <thead className="bg-slate-50">
