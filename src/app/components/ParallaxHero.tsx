@@ -55,15 +55,15 @@ export function ParallaxHero() {
       <div className="w-full text-center relative z-10">
         <motion.div style={{ y: headingY, scale: headingScale }}>
           <ScrollAnimation delay={0.1}>
-            <h1 className="text-5xl md:text-6xl font-light tracking-tight text-white mb-8">
-              Intelligent quoting & scheduling for <span className="text-blue-500">modern manufacturing</span>
+            <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">
+              Smarter Quotes. Faster Manufacturing. <span className="text-blue-400">Powered by Gendra AI.</span>
             </h1>
           </ScrollAnimation>
         </motion.div>
         
         <ScrollAnimation delay={0.2}>
           <p className="text-xl md:text-2xl text-slate-100 mx-auto mb-12 max-w-3xl leading-relaxed">
-            Gendra is your factory operating system powered by AI and real-time data analysis
+            Instant quoting, intelligent scheduling, and actionable insights — designed for modern manufacturers.
           </p>
         </ScrollAnimation>
         
@@ -73,7 +73,7 @@ export function ParallaxHero() {
               href="/quote" 
               primary={true}
             >
-              See Quoting Platform
+              Get a Quote
             </MotionButton>
             <MotionButton 
               href="/dashboard" 
