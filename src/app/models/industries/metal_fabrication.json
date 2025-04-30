@@ -1,0 +1,85 @@
+{
+  "id": "metal_fabrication",
+  "name": "Metal Fabrication",
+  "description": "Precision manufacturing of metal parts through cutting, bending, and assembling processes.",
+  "icon": "<svg class='w-4 h-4' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V6.5L15.5 2z'></path><path d='M3 7.6v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8'></path><path d='M15 2v5h5'></path></svg>",
+  "basePriceCoefficient": 120.0,
+  "formFields": [
+    {
+      "id": "partName",
+      "label": "Part Name",
+      "type": "text",
+      "placeholder": "E.g., Bracket, Shaft, Housing",
+      "required": true
+    },
+    {
+      "id": "material",
+      "label": "Material",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "steel", "label": "Steel (1018/1020)", "costFactor": 1.0 },
+        { "value": "stainless_steel", "label": "Stainless Steel (304/316)", "costFactor": 2.2 },
+        { "value": "aluminum", "label": "Aluminum (6061)", "costFactor": 1.4 },
+        { "value": "brass", "label": "Brass", "costFactor": 2.5 },
+        { "value": "copper", "label": "Copper", "costFactor": 2.8 },
+        { "value": "titanium", "label": "Titanium", "costFactor": 5.0 }
+      ]
+    },
+    {
+      "id": "thickness",
+      "label": "Thickness (mm)",
+      "type": "number",
+      "min": 0.5,
+      "max": 50,
+      "required": true,
+      "placeholder": "Material thickness"
+    },
+    {
+      "id": "quantity",
+      "label": "Quantity",
+      "type": "number",
+      "min": 1,
+      "max": 1000,
+      "required": true,
+      "placeholder": "Number of parts"
+    },
+    {
+      "id": "complexity",
+      "label": "Complexity",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "low", "label": "Low - Simple cuts and bends", "factor": 0.8 },
+        { "value": "medium", "label": "Medium - Multiple operations", "factor": 1.0 },
+        { "value": "high", "label": "High - Precision machining required", "factor": 1.5 },
+        { "value": "very_high", "label": "Very High - Complex design with tight tolerances", "factor": 2.0 }
+      ]
+    },
+    {
+      "id": "surface_finish",
+      "label": "Surface Finish",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "mill_finish", "label": "Mill Finish (as fabricated)", "factor": 1.0 },
+        { "value": "brushed", "label": "Brushed", "factor": 1.2 },
+        { "value": "polished", "label": "Polished", "factor": 1.4 },
+        { "value": "powder_coated", "label": "Powder Coated", "factor": 1.5 },
+        { "value": "anodized", "label": "Anodized (aluminum only)", "factor": 1.6 }
+      ]
+    },
+    {
+      "id": "deadline",
+      "label": "Required Deadline",
+      "type": "date",
+      "required": true
+    }
+  ],
+  "quoteModelVersion": "1.0",
+  "quoteModelCoefficients": {
+    "intercept": 50.0,
+    "thickness": 2.5,
+    "quantity": 0.8
+  }
+} 

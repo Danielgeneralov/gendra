@@ -1,0 +1,120 @@
+{
+  "id": "injection_molding",
+  "name": "Injection Molding",
+  "description": "Production of plastic parts by injecting molten material into a mold cavity where it cools and hardens.",
+  "icon": "<svg class='w-4 h-4' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z'></path><path d='M8 11h8'></path><path d='M8 14h8'></path><path d='M8 17h8'></path></svg>",
+  "basePriceCoefficient": 500.0,
+  "formFields": [
+    {
+      "id": "partName",
+      "label": "Part Name",
+      "type": "text",
+      "placeholder": "E.g., Housing, Cover, Knob",
+      "required": true
+    },
+    {
+      "id": "material",
+      "label": "Material",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "abs", "label": "ABS", "costFactor": 1.0 },
+        { "value": "polycarbonate", "label": "Polycarbonate (PC)", "costFactor": 1.3 },
+        { "value": "polypropylene", "label": "Polypropylene (PP)", "costFactor": 0.8 },
+        { "value": "polyethylene", "label": "Polyethylene (PE)", "costFactor": 0.7 },
+        { "value": "nylon", "label": "Nylon (PA)", "costFactor": 1.5 },
+        { "value": "pom", "label": "Acetal (POM)", "costFactor": 1.4 },
+        { "value": "tpe", "label": "Thermoplastic Elastomer (TPE)", "costFactor": 1.6 }
+      ]
+    },
+    {
+      "id": "cavities",
+      "label": "Number of Cavities",
+      "type": "number",
+      "min": 1,
+      "max": 32,
+      "required": true,
+      "placeholder": "Cavities in the mold"
+    },
+    {
+      "id": "weight",
+      "label": "Part Weight (grams)",
+      "type": "number",
+      "min": 1,
+      "max": 5000,
+      "required": true,
+      "placeholder": "Weight of a single part"
+    },
+    {
+      "id": "quantity",
+      "label": "Production Quantity",
+      "type": "number",
+      "min": 500,
+      "max": 1000000,
+      "required": true,
+      "placeholder": "Number of parts"
+    },
+    {
+      "id": "complexity",
+      "label": "Part Complexity",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "low", "label": "Low - Simple shape, no undercuts", "factor": 0.7 },
+        { "value": "medium", "label": "Medium - Some features, simple undercuts", "factor": 1.0 },
+        { "value": "high", "label": "High - Complex geometry, multiple undercuts", "factor": 1.5 },
+        { "value": "very_high", "label": "Very High - Advanced features, tight tolerances", "factor": 2.2 }
+      ]
+    },
+    {
+      "id": "surface_finish",
+      "label": "Surface Finish",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "standard", "label": "Standard (SPI-C1/MT-11010)", "factor": 1.0 },
+        { "value": "medium", "label": "Medium (SPI-B1/MT-11020)", "factor": 1.2 },
+        { "value": "high", "label": "High Polish (SPI-A2/MT-11030)", "factor": 1.5 },
+        { "value": "texture", "label": "Textured", "factor": 1.3 }
+      ]
+    },
+    {
+      "id": "color",
+      "label": "Color Requirements",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "natural", "label": "Natural/No Color", "factor": 1.0 },
+        { "value": "standard", "label": "Standard Color", "factor": 1.1 },
+        { "value": "custom", "label": "Custom Color Match", "factor": 1.3 },
+        { "value": "multiple", "label": "Multiple Colors/Overmolding", "factor": 1.8 }
+      ]
+    },
+    {
+      "id": "deadline",
+      "label": "Required Deadline",
+      "type": "date",
+      "required": true
+    }
+  ],
+  "toolingFields": [
+    {
+      "id": "mold_material",
+      "label": "Mold Material",
+      "type": "select",
+      "options": [
+        { "value": "aluminum", "label": "Aluminum (Prototype/Low Volume)", "factor": 0.7 },
+        { "value": "steel_p20", "label": "P20 Steel (Standard Production)", "factor": 1.0 },
+        { "value": "steel_hardened", "label": "Hardened Steel (High Volume)", "factor": 1.5 },
+        { "value": "beryllium", "label": "Beryllium Copper (Special Applications)", "factor": 2.2 }
+      ]
+    }
+  ],
+  "quoteModelVersion": "1.0",
+  "quoteModelCoefficients": {
+    "intercept": 500.0,
+    "weight": 0.5,
+    "cavities": -0.15,
+    "quantity": -0.0001
+  }
+} 
