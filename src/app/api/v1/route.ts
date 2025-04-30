@@ -1,13 +1,35 @@
 import { NextResponse } from 'next/server';
 import { PYTHON_API_URL } from '@/app/config';
-import fs from 'fs';
-import path from 'path';
+
+// Define types for industry config and form fields
+interface FormFieldOption {
+  value: string;
+  label: string;
+  factor?: number;
+  costFactor?: number;
+}
+
+interface FormField {
+  id: string;
+  label: string;
+  type: string;
+  options?: FormFieldOption[];
+  required?: boolean;
+}
+
+interface IndustryConfig {
+  id: string;
+  name: string;
+  basePriceCoefficient?: number;
+  formFields?: FormField[];
+  [key: string]: unknown;
+}
 
 // This is a placeholder for the actual FastAPI server URL
 const FASTAPI_URL = PYTHON_API_URL || 'http://localhost:8000';
 
 // Helper function to load JSON config files
-async function loadIndustryConfig(industryId: string) {
+async function loadIndustryConfig(industryId: string): Promise<IndustryConfig | null> {
   try {
     // Using dynamic import for ESM compatibility
     const configModule = await import(`@/app/models/industries/${industryId}.json`);
@@ -107,10 +129,10 @@ export async function POST(request: Request) {
         
         // Get complexity factor if available
         if (requestData.complexity && config.formFields) {
-          const complexityField = config.formFields.find((f: any) => f.id === 'complexity');
+          const complexityField = config.formFields.find((f: FormField) => f.id === 'complexity');
           if (complexityField && complexityField.options) {
             const complexityOption = complexityField.options.find(
-              (o: any) => o.value === requestData.complexity
+              (o: FormFieldOption) => o.value === requestData.complexity
             );
             if (complexityOption) {
               complexityFactor = complexityOption.factor || 1.0;
@@ -121,10 +143,10 @@ export async function POST(request: Request) {
         
         // Get material cost factor if available
         if (requestData.material && config.formFields) {
-          const materialField = config.formFields.find((f: any) => f.id === 'material');
+          const materialField = config.formFields.find((f: FormField) => f.id === 'material');
           if (materialField && materialField.options) {
             const materialOption = materialField.options.find(
-              (o: any) => o.value === requestData.material
+              (o: FormFieldOption) => o.value === requestData.material
             );
             if (materialOption) {
               materialCost = basePrice * (materialOption.costFactor || 1.0);

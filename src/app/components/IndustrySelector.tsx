@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -17,7 +17,16 @@ type IndustrySelectorProps = {
   className?: string;
 };
 
-export const IndustrySelector = ({
+// Loading component for Suspense fallback
+const IndustrySelectorLoading = ({ className = "" }) => (
+  <div className={`animate-pulse bg-[#0A1828]/50 rounded-md p-4 ${className}`}>
+    <div className="h-8 bg-[#050C1C] rounded w-1/3 mb-4"></div>
+    <div className="h-4 bg-[#050C1C] rounded w-2/3"></div>
+  </div>
+);
+
+// Main content component that uses useSearchParams
+const IndustrySelectorContent = ({
   displayMode = "tabs",
   onIndustryChange,
   className = "",
@@ -28,6 +37,13 @@ export const IndustrySelector = ({
   const [isLoading, setIsLoading] = useState(true);
   const [selectedIndustry, setSelectedIndustry] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+
+  // Update URL when industry changes - memoized to avoid dependency cycle
+  const updateURLParams = useCallback((industryId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("industry", industryId);
+    router.push(`?${params.toString()}`, { scroll: false });
+  }, [router, searchParams]);
 
   // Fetch industries from API
   useEffect(() => {
@@ -61,14 +77,7 @@ export const IndustrySelector = ({
     };
     
     fetchIndustries();
-  }, [searchParams]);
-
-  // Update URL when industry changes
-  const updateURLParams = (industryId: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("industry", industryId);
-    router.push(`?${params.toString()}`, { scroll: false });
-  };
+  }, [searchParams, updateURLParams]);
 
   // Handle industry selection
   const handleIndustryChange = (industryId: string) => {
@@ -85,12 +94,7 @@ export const IndustrySelector = ({
 
   // Render loading state
   if (isLoading) {
-    return (
-      <div className={`animate-pulse bg-[#0A1828]/50 rounded-md p-4 ${className}`}>
-        <div className="h-8 bg-[#050C1C] rounded w-1/3 mb-4"></div>
-        <div className="h-4 bg-[#050C1C] rounded w-2/3"></div>
-      </div>
-    );
+    return <IndustrySelectorLoading className={className} />;
   }
 
   // Render error state
@@ -186,5 +190,14 @@ export const IndustrySelector = ({
         </AnimatePresence>
       )}
     </div>
+  );
+};
+
+// Main component with Suspense boundary
+export const IndustrySelector = (props: IndustrySelectorProps) => {
+  return (
+    <Suspense fallback={<IndustrySelectorLoading className={props.className} />}>
+      <IndustrySelectorContent {...props} />
+    </Suspense>
   );
 }; 

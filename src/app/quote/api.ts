@@ -75,7 +75,7 @@ export async function fetchQuote(
     const timeoutPromise = new Promise<QuoteResponse>((_, reject) => {
       setTimeout(() => {
         // Generate a mock quote if API takes too long
-        console.log("API timeout - using local mock quote");
+        console.warn("API timeout - using local mock quote");
         const mockQuote = generateMockQuote(material, quantity, complexityValue);
         return { quote: mockQuote };
       }, 7000); // Wait 7 seconds before falling back to local calculation

@@ -4,9 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "prebuild": "npm run check:suspense",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint --config eslint.config.mjs .",
+    "lint:fix": "eslint --config eslint.config.mjs . --fix",
+    "lint:basic": "eslint --config eslint.config.mjs . --rule=\"@typescript-eslint/await-thenable:0\" --rule=\"@typescript-eslint/no-floating-promises:0\"",
+    "check:suspense": "node scripts/check-suspense.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.3",
@@ -23,8 +27,12 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@typescript-eslint/eslint-plugin": "^6.9.0",
+    "@typescript-eslint/parser": "^6.9.0",
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

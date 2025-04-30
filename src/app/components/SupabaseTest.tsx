@@ -21,7 +21,7 @@ export const SupabaseTest = () => {
       
       // First, check if we can connect to Supabase
       try {
-        const { data, error } = await supabase.from('quote_leads').select('count').limit(1);
+        const { error } = await supabase.from('quote_leads').select('count').limit(1);
         
         if (error) {
           setTestStatus(`Error accessing quote_leads table: ${error.message}`);

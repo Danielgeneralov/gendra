@@ -1,0 +1,21 @@
+# Next.js build output
+.next/
+out/
+
+# Node modules
+node_modules/
+
+# TypeScript build artifacts
+*.js.map
+*.d.ts
+
+# Vercel build output
+.vercel/
+
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# Backend generated files
+backend/ 

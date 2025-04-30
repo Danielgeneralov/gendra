@@ -1,24 +1,29 @@
 "use client";
 
 import { createClient } from '@supabase/supabase-js';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // Direct connection to Supabase without using the shared client
 export default function SupabaseDirectTest() {
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
+  const [supabaseUrl, setSupabaseUrl] = useState('');
+  const [supabaseKey, setSupabaseKey] = useState('');
+  
+  // Get environment variables on client side
+  useEffect(() => {
+    setSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL || '');
+    setSupabaseKey(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '');
+  }, []);
   
   const testDirectInsert = async () => {
     setLoading(true);
     setResult('Testing direct insert...');
     
     try {
-      // Create Supabase client directly in this component
-      const supabaseUrl = 'https://cpnbybkgniwshqavvnlz.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwbmJ5Ymtnbml3c2hxYXZ2bmx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI4NDg3MDEsImV4cCI6MjA1ODQyNDcwMX0.OXARQAInCNo8IX7qF2OjqABzDws6csfr8q4JzSZL6ec';
-      
       if (!supabaseUrl || !supabaseKey) {
-        setResult('Error: Missing Supabase credentials');
+        setResult('Error: Missing Supabase credentials in environment variables. Check your .env.local file.');
+        setLoading(false);
         return;
       }
       
@@ -33,7 +38,7 @@ export default function SupabaseDirectTest() {
           quote_amount: 99.99,
           created_at: new Date().toISOString(),
           is_contacted: false,
-          notes: 'Direct test'
+          notes: 'Direct test using env variables'
         })
         .select();
       
@@ -41,7 +46,7 @@ export default function SupabaseDirectTest() {
         console.error('Insert error:', error);
         setResult(`❌ Error: ${error.message}`);
       } else {
-        console.log('Success:', data);
+        console.warn('Success:', data);
         setResult(`✅ Success! Inserted record with ID: ${data[0]?.id || 'unknown'}`);
       }
     } catch (err) {
@@ -57,14 +62,25 @@ export default function SupabaseDirectTest() {
       <div className="bg-white p-6 rounded-lg shadow-md max-w-md w-full">
         <h1 className="text-2xl font-bold mb-4">Direct Supabase Test</h1>
         <p className="mb-4 text-slate-600">
-          This test bypasses the shared Supabase client and connects directly.
+          This test uses environment variables from .env.local to connect to Supabase.
         </p>
+        
+        <div className="mb-4 p-3 bg-slate-100 rounded text-xs font-mono overflow-hidden">
+          <p className="truncate">
+            NEXT_PUBLIC_SUPABASE_URL: {supabaseUrl ? `${supabaseUrl.substring(0, 10)}...` : 'Not set'}
+          </p>
+          <p className="truncate">
+            NEXT_PUBLIC_SUPABASE_ANON_KEY: {supabaseKey ? '✓ Set' : 'Not set'}
+          </p>
+        </div>
         
         <button
           onClick={testDirectInsert}
-          disabled={loading}
+          disabled={loading || !supabaseUrl || !supabaseKey}
           className={`w-full py-2 px-4 rounded ${
-            loading ? "bg-slate-400" : "bg-blue-600 hover:bg-blue-700"
+            loading || !supabaseUrl || !supabaseKey 
+              ? "bg-slate-400" 
+              : "bg-blue-600 hover:bg-blue-700"
           } text-white font-medium transition-colors`}
         >
           {loading ? "Testing..." : "Test Direct Insert"}

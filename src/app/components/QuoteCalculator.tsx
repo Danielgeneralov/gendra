@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ScrollAnimation } from "./ScrollAnimation";
 import { MotionButton } from "./MotionButton";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,7 +16,7 @@ type QuoteResult = {
 };
 
 type QuoteCalculatorProps = {
-  formData: Record<string, any>;
+  formData: Record<string, string | number>;
   industryId: string;
   onCaptureEmail?: (email: string, quoteAmount: number) => Promise<void>;
   className?: string;
@@ -43,8 +43,8 @@ export const QuoteCalculator = ({
       }
     : null;
   
-  // Fetch quote from API
-  const calculateQuote = async () => {
+  // Fetch quote from API - memoized to avoid dependency cycles
+  const calculateQuote = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
@@ -69,14 +69,14 @@ export const QuoteCalculator = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [formData, industryId]);
   
   // Calculate quote when form data changes
   useEffect(() => {
     if (Object.keys(formData).length > 0) {
       calculateQuote();
     }
-  }, [formData, industryId]);
+  }, [formData, industryId, calculateQuote]);
   
   // Validate email
   const validateEmail = (email: string): boolean => {
@@ -200,7 +200,7 @@ export const QuoteCalculator = ({
                     <p className="mt-1 text-sm text-red-400">{emailError}</p>
                   )}
                   <p className="mt-2 text-xs text-[#CBD5E1]">
-                    We won't spam you. We just want to help you quote smarter.
+                    We won&apos;t spam you. We just want to help you quote smarter.
                   </p>
                 </div>
                 

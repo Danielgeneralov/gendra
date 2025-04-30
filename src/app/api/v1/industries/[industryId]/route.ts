@@ -1,7 +1,25 @@
 import { NextResponse } from 'next/server';
+import type { FormField, FormFieldOption, IndustryConfig } from '../../../../types';
+
+// Route Segment Config
+export const dynamic = 'auto';
+export const dynamicParams = true;
+
+// Define types for form fields and config
+interface Material {
+  value: string;
+  label: string;
+  basePrice: number;
+}
+
+interface ComplexityLevel {
+  value: string;
+  label: string;
+  factor: number;
+}
 
 // Industry configurations
-const industryConfigs = {
+const industryConfigs: Record<string, IndustryConfig> = {
   metal_fabrication: {
     id: "metal_fabrication",
     name: "Metal Fabrication",
@@ -199,20 +217,36 @@ const industryConfigs = {
   }
 };
 
-export async function GET(
-  request: Request,
-  { params }: { params: { industryId: string } }
-) {
-  const { industryId } = params;
+interface RequestContext {
+  params: { industryId: string };
+}
 
-  // Check if the requested industry exists
-  if (!industryConfigs[industryId as keyof typeof industryConfigs]) {
+export async function GET(request: Request, context: RequestContext) {
+  try {
+    const { industryId } = context.params;
+
+    // Check if the requested industry exists
+    if (!industryConfigs[industryId as keyof typeof industryConfigs]) {
+      return NextResponse.json(
+        { error: `Industry '${industryId}' not found` },
+        { status: 404 }
+      );
+    }
+
+    // Set cache headers for better performance
+    const response = NextResponse.json(
+      industryConfigs[industryId as keyof typeof industryConfigs]
+    );
+
+    // Cache for 1 day
+    response.headers.set('Cache-Control', 'max-age=86400, s-maxage=86400, stale-while-revalidate');
+    
+    return response;
+  } catch (error) {
+    console.error('Error in industry route:', error);
     return NextResponse.json(
-      { error: `Industry '${industryId}' not found` },
-      { status: 404 }
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
-
-  // Return the industry config
-  return NextResponse.json(industryConfigs[industryId as keyof typeof industryConfigs]);
 } 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ScrollAnimation } from "../../components/ScrollAnimation";
 import { IndustrySelector } from "../../components/IndustrySelector";
@@ -10,7 +10,22 @@ import { supabase } from "../../supabase";
 import { DEFAULT_INDUSTRY } from "../../config";
 import { motion } from "framer-motion";
 
-export default function IndustryQuotePage() {
+// Loading component for Suspense fallback
+const Loading = () => (
+  <div className="py-16 px-4 sm:px-6 lg:px-8 min-h-screen bg-gradient-to-b from-black via-[#050C1C] to-[#0A1828]">
+    <div className="max-w-4xl mx-auto animate-pulse">
+      <div className="h-8 bg-slate-700 rounded w-3/4 mb-4"></div>
+      <div className="h-4 bg-slate-700 rounded w-1/2 mb-8"></div>
+      <div className="space-y-6">
+        <div className="h-40 bg-slate-800 rounded"></div>
+        <div className="h-60 bg-slate-800 rounded"></div>
+      </div>
+    </div>
+  </div>
+);
+
+// Main content component that uses useSearchParams
+const IndustryQuoteContent = () => {
   const searchParams = useSearchParams();
   const [selectedIndustry, setSelectedIndustry] = useState<string>(
     searchParams?.get("industry") || DEFAULT_INDUSTRY
@@ -64,7 +79,7 @@ export default function IndustryQuotePage() {
       if (error) {
         console.error("Error inserting quote lead into Supabase:", error);
       } else {
-        console.log("Successfully saved quote lead");
+        console.warn("Successfully saved quote lead");
       }
     } catch (err) {
       console.error("Exception during Supabase quote lead insert:", err);
@@ -140,5 +155,14 @@ export default function IndustryQuotePage() {
         )}
       </div>
     </div>
+  );
+};
+
+// Main page component with Suspense boundary
+export default function IndustryQuotePage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <IndustryQuoteContent />
+    </Suspense>
   );
 } 

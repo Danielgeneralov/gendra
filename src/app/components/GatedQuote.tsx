@@ -3,64 +3,15 @@
 import { useState, FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MotionButton } from "./MotionButton";
-import { createClient } from '@supabase/supabase-js';
-import { supabase as supabaseOriginal } from "../supabase";
+import { saveLeadToSupabase } from "../lib/supabase";
+import supabase from "../lib/supabase";
+import { QuoteFormData } from "../types";
 
-type GatedQuoteProps = {
+interface GatedQuoteProps {
   quoteAmount: number | null;
   isLoading: boolean;
-  formData: {
-    partType: string;
-    material: string;
-    quantity: number;
-    complexity: string;
-    deadline: string;
-  };
-};
-
-const saveLeadToSupabase = async (email: string, quoteAmount: number, formData: any) => {
-  try {
-    const supabaseUrl = 'https://cpnbybkgniwshqavvnlz.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwbmJ5Ymtnbml3c2hxYXZ2bmx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI4NDg3MDEsImV4cCI6MjA1ODQyNDcwMX0.OXARQAInCNo8IX7qF2OjqABzDws6csfr8q4JzSZL6ec';
-    
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase credentials');
-      return false;
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    console.log("Attempting to save lead to quote_leads (direct client):", {
-      email,
-      quote_amount: quoteAmount,
-      created_at: new Date().toISOString(),
-      is_contacted: false,
-      notes: `Quote for ${formData.partType}, ${formData.material}, qty: ${formData.quantity}`
-    });
-    
-    const { data, error } = await supabase
-      .from('quote_leads')
-      .insert({
-        email,
-        quote_amount: quoteAmount,
-        created_at: new Date().toISOString(),
-        is_contacted: false,
-        notes: `Quote for ${formData.partType}, ${formData.material}, qty: ${formData.quantity}`
-      })
-      .select();
-    
-    if (error) {
-      console.error("Error saving lead (direct client):", error);
-      return false;
-    } else {
-      console.log("Successfully saved lead (direct client):", data);
-      return true;
-    }
-  } catch (err) {
-    console.error("Exception during direct lead save:", err);
-    return false;
-  }
-};
+  formData: QuoteFormData;
+}
 
 export const GatedQuote = ({ quoteAmount, isLoading, formData }: GatedQuoteProps) => {
   const [email, setEmail] = useState("");
@@ -105,14 +56,24 @@ export const GatedQuote = ({ quoteAmount, isLoading, formData }: GatedQuoteProps
     
     try {
       // Try our direct implementation first
-      const saveResult = await saveLeadToSupabase(email, quoteAmount || 0, formData);
+      const saveResult = await saveLeadToSupabase(
+        email, 
+        quoteAmount || 0, 
+        {
+          partType: formData.partType as string | undefined,
+          material: formData.material as string | undefined,
+          quantity: typeof formData.quantity === 'string' ? parseInt(formData.quantity, 10) : formData.quantity as number | undefined,
+          complexity: formData.complexity as string | undefined,
+          deadline: formData.deadline as string | undefined
+        }
+      );
       
       // Fall back to original implementation if direct fails and supabase client exists
-      if (!saveResult && supabaseOriginal && quoteAmount) {
+      if (!saveResult && supabase && quoteAmount) {
         try {
-          console.log("Direct save failed, trying original client");
+          console.warn("Direct save failed, trying original client");
           
-          const { data, error } = await supabaseOriginal
+          const { data, error } = await supabase
             .from("quote_leads")
             .insert({
               email,
@@ -126,7 +87,7 @@ export const GatedQuote = ({ quoteAmount, isLoading, formData }: GatedQuoteProps
           if (error) {
             console.error("Error saving lead with original client:", error);
           } else {
-            console.log("Successfully saved lead with original client:", data);
+            console.warn("Successfully saved lead with original client:", data);
           }
         } catch (err) {
           console.error("Exception during original client save:", err);
@@ -215,7 +176,7 @@ export const GatedQuote = ({ quoteAmount, isLoading, formData }: GatedQuoteProps
                     <p className="mt-1 text-sm text-red-600">{emailError}</p>
                   )}
                   <p className="mt-2 text-xs text-slate-500">
-                    We won't spam you. We just want to help you quote smarter.
+                    We won&apos;t spam you. We just want to help you quote smarter.
                   </p>
                 </div>
                 

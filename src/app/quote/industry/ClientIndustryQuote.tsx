@@ -1,16 +1,22 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { ScrollAnimation } from "../components/ScrollAnimation";
-import { IndustrySelector } from "../components/IndustrySelector";
-import { IndustryForm } from "../components/IndustryForm";
-import { QuoteCalculator } from "../components/QuoteCalculator";
-import { Toast } from "../components/Toast";
-import { supabase } from "../supabase";
-import { DEFAULT_INDUSTRY } from "../config";
-import { FEATURES } from "../config";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ScrollAnimation } from "../../components/ScrollAnimation";
+import { IndustrySelector } from "../../components/IndustrySelector";
+import { IndustryForm } from "../../components/IndustryForm";
+import { QuoteCalculator } from "../../components/QuoteCalculator";
+import { supabase } from "../../supabase";
 import { motion } from "framer-motion";
+
+// Define FormData interface
+interface FormData {
+  [key: string]: string | number;
+}
+
+interface ClientIndustryQuoteProps {
+  initialIndustry: string;
+}
 
 // Loading component for Suspense fallback
 const Loading = () => (
@@ -26,98 +32,24 @@ const Loading = () => (
   </div>
 );
 
-// Analytics tracking function - modify this based on your analytics provider
-const trackEvent = (eventName: string, properties?: Record<string, any>) => {
-  if (FEATURES.SHOW_DEBUG_INFO) {
-    console.warn(`[Analytics] ${eventName}`, properties);
-  }
-  
-  // Uncomment and adapt for your analytics provider
-  // if (typeof window !== 'undefined' && window.analytics) {
-  //   window.analytics.track(eventName, properties);
-  // }
-};
-
 // Main content component that uses useSearchParams
-const QuotePageContent = () => {
+const ClientIndustryQuoteContent = ({ initialIndustry }: ClientIndustryQuoteProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [selectedIndustry, setSelectedIndustry] = useState<string>(
-    searchParams?.get("industry") || DEFAULT_INDUSTRY
-  );
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [selectedIndustry, setSelectedIndustry] = useState<string>(initialIndustry);
+  const [formData, setFormData] = useState<FormData>({});
   const [showQuoteCalculator, setShowQuoteCalculator] = useState(false);
-  const [isRedirected, setIsRedirected] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-  
-  // Handle URL parameter initialization and legacy redirects
+
+  // Update selected industry when URL changes
   useEffect(() => {
-    // Get industry from URL or use default
     const industry = searchParams?.get("industry");
-    
-    // Check if this is the user's first visit using localStorage
-    const hasVisitedBefore = localStorage.getItem('has_visited_new_quote');
-    
-    // Handle redirects from old URLs
-    const oldParams = new URLSearchParams(window.location.search);
-    if (oldParams.has("partType") || oldParams.has("material") || oldParams.has("quantity")) {
-      // Legacy URL detected - we're preserving parameters but adding industry
-      const newParams = new URLSearchParams(oldParams);
-      if (!newParams.has("industry")) {
-        newParams.set("industry", DEFAULT_INDUSTRY);
-      }
-      
-      // Only redirect once to avoid loops
-      if (!isRedirected) {
-        setIsRedirected(true);
-        
-        // Show toast if first visit
-        if (!hasVisitedBefore) {
-          setShowToast(true);
-          localStorage.setItem('has_visited_new_quote', 'true');
-        }
-        
-        router.replace(`/quote?${newParams.toString()}`);
-      }
-    } else if (industry) {
-      // Set industry from URL
+    if (industry && industry !== selectedIndustry) {
       setSelectedIndustry(industry);
-      
-      // Track industry selection (analytics)
-      trackEvent('industry_selected', { industry });
-      
-      // Show toast if first visit and no redirect happened
-      if (!hasVisitedBefore && !isRedirected) {
-        setShowToast(true);
-        localStorage.setItem('has_visited_new_quote', 'true');
-      }
-    } else if (!isRedirected) {
-      // No industry in URL, set default and update URL
-      setIsRedirected(true);
-      setSelectedIndustry(DEFAULT_INDUSTRY);
-      
-      // Update URL with default industry
-      const params = new URLSearchParams(searchParams?.toString() || "");
-      params.set("industry", DEFAULT_INDUSTRY);
-      router.replace(`/quote?${params.toString()}`);
-      
-      // Track default industry selection
-      trackEvent('industry_selected', { 
-        industry: DEFAULT_INDUSTRY,
-        source: 'default'
-      });
-      
-      // Show toast if first visit
-      if (!hasVisitedBefore) {
-        setShowToast(true);
-        localStorage.setItem('has_visited_new_quote', 'true');
-      }
+      // Reset form data when industry changes
+      setFormData({});
+      setShowQuoteCalculator(false);
     }
-    
-    // Reset form when industry changes
-    setFormData({});
-    setShowQuoteCalculator(false);
-  }, [searchParams, router, isRedirected]);
+  }, [searchParams, selectedIndustry]);
 
   // Handle industry selection
   const handleIndustryChange = (industryId: string) => {
@@ -126,23 +58,16 @@ const QuotePageContent = () => {
     setFormData({});
     setShowQuoteCalculator(false);
     
-    // Track industry change (analytics)
-    trackEvent('industry_changed', { 
-      industry: industryId,
-      previous_industry: selectedIndustry
-    });
+    // Update URL with new industry
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("industry", industryId);
+    router.push(`?${params.toString()}`, { scroll: false });
   };
 
   // Handle form submission
-  const handleFormSubmit = async (data: Record<string, any>, industry: string) => {
+  const handleFormSubmit = async (data: FormData) => {
     setFormData(data);
     setShowQuoteCalculator(true);
-    
-    // Track form submission (analytics)
-    trackEvent('quote_form_submitted', { 
-      industry,
-      fields_completed: Object.keys(data).length
-    });
   };
 
   // Handle email capture
@@ -165,18 +90,8 @@ const QuotePageContent = () => {
 
       if (error) {
         console.error("Error inserting quote lead into Supabase:", error);
-        // Track error (analytics)
-        trackEvent('quote_lead_error', { 
-          error: error.message,
-          industry: selectedIndustry
-        });
       } else {
         console.warn("Successfully saved quote lead");
-        // Track successful lead capture (analytics)
-        trackEvent('quote_lead_captured', { 
-          industry: selectedIndustry,
-          quote_amount: quoteAmount
-        });
       }
     } catch (err) {
       console.error("Exception during Supabase quote lead insert:", err);
@@ -186,15 +101,6 @@ const QuotePageContent = () => {
   return (
     <div className="py-16 px-4 sm:px-6 lg:px-8 min-h-screen bg-gradient-to-b from-black via-[#050C1C] to-[#0A1828]">
       <div className="max-w-4xl mx-auto">
-        {/* Toast notification for first-time visitors */}
-        <Toast 
-          isVisible={showToast}
-          message="Welcome to our new industry-specific quoting experience!"
-          type="info"
-          duration={7000}
-          onClose={() => setShowToast(false)}
-        />
-        
         <ScrollAnimation>
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -264,11 +170,11 @@ const QuotePageContent = () => {
   );
 };
 
-// Main page component with Suspense boundary
-export default function QuotePage() {
+// Main component with Suspense boundary
+export default function ClientIndustryQuote(props: ClientIndustryQuoteProps) {
   return (
     <Suspense fallback={<Loading />}>
-      <QuotePageContent />
+      <ClientIndustryQuoteContent {...props} />
     </Suspense>
   );
 } 

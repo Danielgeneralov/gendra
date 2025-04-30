@@ -24,9 +24,13 @@ type IndustryConfig = {
   complexityLevels?: { value: string; label: string; factor: number }[];
 };
 
+interface FormDataType {
+  [key: string]: string | number;
+}
+
 type IndustryFormProps = {
   industryId: string;
-  onSubmit: (formData: any, industry: string) => Promise<void>;
+  onSubmit: (formData: FormDataType, industry: string) => Promise<void>;
   className?: string;
 };
 
@@ -36,7 +40,7 @@ export const IndustryForm = ({
   className = "",
 }: IndustryFormProps) => {
   const [config, setConfig] = useState<IndustryConfig | null>(null);
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [formData, setFormData] = useState<FormDataType>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -60,7 +64,7 @@ export const IndustryForm = ({
         setConfig(data);
         
         // Initialize form data with defaults
-        const initialData: Record<string, any> = {};
+        const initialData: FormDataType = {};
         data.formFields.forEach((field: FormField) => {
           if (field.type === 'number') {
             initialData[field.id] = field.min || 1;
@@ -113,7 +117,8 @@ export const IndustryForm = ({
       if (
         field.type === "number" &&
         typeof field.min === "number" &&
-        formData[field.id] < field.min
+        typeof formData[field.id] === "number" &&
+        (formData[field.id] as number) < field.min
       ) {
         setValidationError(`${field.label} must be at least ${field.min}`);
         return false;

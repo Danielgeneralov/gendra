@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { QuoteFormData } from "../../../../types";
 
 // Define types for our data structures
-type ComplexityLevel = {
+interface ComplexityLevel {
   factor: number;
   name: string;
 };
@@ -71,26 +72,13 @@ const calculateQuantityDiscount = (quantity: number): number => {
   return 0;
 };
 
-// Define the expected form data structure
-interface QuoteFormData {
-  material?: string;
-  quantity?: number | string;
-  complexity?: string;
-  dimensions?: {
-    length?: number;
-    width?: number;
-    height?: number;
-  };
-  [key: string]: any; // Allow for other fields
-}
-
 export async function POST(
   request: NextRequest,
-  { params }: { params: { industryId: string } }
+  context: { params: { industryId: string } }
 ) {
   try {
-    // Get industry ID from route params
-    const industryId = params.industryId;
+    // Get industry ID from route params using proper Next.js 14 pattern
+    const { industryId } = context.params;
     
     // Get form data from request body
     const formData: QuoteFormData = await request.json();
@@ -135,8 +123,8 @@ export async function POST(
     // Calculate lead time
     const leadTime = calculateLeadTime(complexity, quantity);
     
-    // Return quote response
-    return NextResponse.json({
+    // Apply cache headers for quote results
+    const response = NextResponse.json({
       quote: totalQuote,
       basePrice: basePrice,
       materialCost: materialCost,
@@ -145,6 +133,11 @@ export async function POST(
       leadTime: leadTime,
       complexity: complexityLevels[complexity]?.name || "Medium"
     });
+
+    // Add cache-control header (valid for 1 hour)
+    response.headers.set('Cache-Control', 'max-age=3600, s-maxage=3600');
+    
+    return response;
   } catch (error) {
     console.error("Error calculating quote:", error);
     return NextResponse.json(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MotionButton } from "./MotionButton";
 import { createClient } from '@supabase/supabase-js';
@@ -21,19 +21,25 @@ type QuoteEmailModalProps = {
   quoteAmount: number | null;
 };
 
-const saveLeadToSupabase = async (email: string, quoteAmount: number, formData: any) => {
+const saveLeadToSupabase = async (email: string, quoteAmount: number, formData: {
+  partType: string;
+  material: string;
+  quantity: number;
+  complexity: string;
+  deadline: string;
+}) => {
   try {
-    const supabaseUrl = 'https://cpnbybkgniwshqavvnlz.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwbmJ5Ymtnbml3c2hxYXZ2bmx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI4NDg3MDEsImV4cCI6MjA1ODQyNDcwMX0.OXARQAInCNo8IX7qF2OjqABzDws6csfr8q4JzSZL6ec';
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
     if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase credentials');
+      console.error('Missing Supabase credentials in environment variables');
       return false;
     }
     
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    console.log("Attempting to save lead to quote_leads from modal (direct client):", {
+    console.warn("Attempting to save lead to quote_leads from modal (direct client):", {
       email,
       quote_amount: quoteAmount,
       created_at: new Date().toISOString(),
@@ -56,7 +62,7 @@ const saveLeadToSupabase = async (email: string, quoteAmount: number, formData: 
       console.error("Error saving lead from modal (direct client):", error);
       return false;
     } else {
-      console.log("Successfully saved lead from modal (direct client):", data);
+      console.warn("Successfully saved lead from modal (direct client):", data);
       return true;
     }
   } catch (err) {
@@ -113,7 +119,7 @@ export const QuoteEmailModal = ({
         
         if (!saveResult && supabaseOriginal) {
           try {
-            console.log("Direct save failed in modal, trying original client");
+            console.warn("Direct save failed in modal, trying original client");
             
             const { data, error } = await supabaseOriginal
               .from("quote_leads")
@@ -129,7 +135,7 @@ export const QuoteEmailModal = ({
             if (error) {
               console.error("Error saving lead with original client from modal:", error);
             } else {
-              console.log("Successfully saved lead with original client from modal:", data);
+              console.warn("Successfully saved lead with original client from modal:", data);
             }
           } catch (err) {
             console.error("Exception during original client save from modal:", err);
@@ -182,7 +188,7 @@ export const QuoteEmailModal = ({
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-slate-900 mb-2">Unlock Your Exact Quote</h2>
               <p className="text-slate-600">
-                You're just one step away from accessing your exact quote and production timeline.
+                You&apos;re just one step away from accessing your exact quote and production timeline.
               </p>
             </div>
             
@@ -220,7 +226,7 @@ export const QuoteEmailModal = ({
               
               <div className="text-xs text-slate-500">
                 <p>
-                  We won't spam you. We just want to help you quote smarter.
+                  We won&apos;t spam you. We just want to help you quote smarter.
                 </p>
               </div>
               

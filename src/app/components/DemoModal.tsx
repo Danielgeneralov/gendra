@@ -37,8 +37,8 @@ export function DemoModal({ isOpen, onClose }: DemoModalProps) {
     setSubmitStatus(null);
     
     try {
-      // For now, just log the data - in the future this would connect to Supabase
-      console.log("Demo request submitted:", formData);
+      // Replace console.log with console.warn
+      console.warn("Demo request submitted:", formData);
       
       // Simulate a successful API call
       await new Promise(resolve => setTimeout(resolve, 1000));
