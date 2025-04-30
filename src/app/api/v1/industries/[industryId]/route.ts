@@ -201,9 +201,10 @@ const industryConfigs = {
 
 export async function GET(
   request: Request,
-  { params }: { params: { industryId: string } }
+  context: { params: { industryId: string } }
 ) {
-  const { industryId } = params;
+  // Wait for params to be resolved
+  const { industryId } = await Promise.resolve(context.params);
 
   // Check if the requested industry exists
   if (!industryConfigs[industryId as keyof typeof industryConfigs]) {

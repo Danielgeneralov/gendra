@@ -12,8 +12,13 @@ import { DEFAULT_INDUSTRY } from "../config";
 import { FEATURES } from "../config";
 import { motion } from "framer-motion";
 
+// Define types for analytics properties
+interface AnalyticsProperties {
+  [key: string]: string | number | boolean;
+}
+
 // Analytics tracking function - modify this based on your analytics provider
-const trackEvent = (eventName: string, properties?: Record<string, any>) => {
+const trackEvent = (eventName: string, properties?: AnalyticsProperties) => {
   if (FEATURES.SHOW_DEBUG_INFO) {
     console.log(`[Analytics] ${eventName}`, properties);
   }
@@ -24,13 +29,18 @@ const trackEvent = (eventName: string, properties?: Record<string, any>) => {
   // }
 };
 
+// Define FormData interface
+interface FormData {
+  [key: string]: string | number | boolean;
+}
+
 export default function QuotePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedIndustry, setSelectedIndustry] = useState<string>(
     searchParams?.get("industry") || DEFAULT_INDUSTRY
   );
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [formData, setFormData] = useState<FormData>({});
   const [showQuoteCalculator, setShowQuoteCalculator] = useState(false);
   const [isRedirected, setIsRedirected] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -119,7 +129,7 @@ export default function QuotePage() {
   };
 
   // Handle form submission
-  const handleFormSubmit = async (data: Record<string, any>, industry: string) => {
+  const handleFormSubmit = async (data: FormData, industry: string) => {
     setFormData(data);
     setShowQuoteCalculator(true);
     

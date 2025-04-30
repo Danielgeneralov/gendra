@@ -10,12 +10,17 @@ import { supabase } from "../../supabase";
 import { DEFAULT_INDUSTRY } from "../../config";
 import { motion } from "framer-motion";
 
+// Define FormData interface
+interface FormData {
+  [key: string]: string | number | boolean;
+}
+
 export default function IndustryQuotePage() {
   const searchParams = useSearchParams();
   const [selectedIndustry, setSelectedIndustry] = useState<string>(
     searchParams?.get("industry") || DEFAULT_INDUSTRY
   );
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [formData, setFormData] = useState<FormData>({});
   const [showQuoteCalculator, setShowQuoteCalculator] = useState(false);
 
   // Update selected industry when URL changes
@@ -38,7 +43,7 @@ export default function IndustryQuotePage() {
   };
 
   // Handle form submission
-  const handleFormSubmit = async (data: Record<string, any>, industry: string) => {
+  const handleFormSubmit = async (data: FormData) => {
     setFormData(data);
     setShowQuoteCalculator(true);
   };
