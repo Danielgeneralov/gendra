@@ -23,6 +23,7 @@ export default function IndustryQuotePage() {
   const [formData, setFormData] = useState<FormData>({});
   const [showQuoteCalculator, setShowQuoteCalculator] = useState(false);
 
+  // Update selected industry when URL changes
   useEffect(() => {
     const industry = searchParams?.get("industry");
     if (industry) {
