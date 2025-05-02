@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Force dynamic to help with route param handling
+export const dynamic = 'force-dynamic';
+
 // Define types for our data structures
 type ComplexityLevel = {
   factor: number;
@@ -84,13 +87,12 @@ interface QuoteFormData {
   [key: string]: any; // Allow for other fields
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { industryId: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
-    // Get industry ID from route params
-    const industryId = params.industryId;
+    // Extract industryId from URL path
+    const url = new URL(request.url);
+    const pathSegments = url.pathname.split('/');
+    const industryId = pathSegments[pathSegments.length - 1];
     
     // Get form data from request body
     const formData: QuoteFormData = await request.json();

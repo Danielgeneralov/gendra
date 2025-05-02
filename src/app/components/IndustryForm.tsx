@@ -62,6 +62,12 @@ export const IndustryForm = ({
         }
         
         const data = await response.json();
+        
+        // Validate that data has required properties
+        if (!data || !data.formFields || !Array.isArray(data.formFields)) {
+          throw new Error('Invalid industry configuration: missing formFields array');
+        }
+        
         setConfig(data);
         
         // Initialize form data with defaults
@@ -249,31 +255,25 @@ export const IndustryForm = ({
         </ScrollAnimation>
       ))}
       
-      <ScrollAnimation delay={config.formFields.length * 0.1}>
-        <motion.div 
-          whileHover={{ scale: 1.02 }} 
-          whileTap={{ scale: 0.98 }}
-          className="mt-6"
+      <div className="mt-8">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full py-3 px-5 bg-gradient-to-r from-[#3B82F6] to-[#6366F1] hover:from-[#2563EB] hover:to-[#4F46E5] text-white font-medium rounded-md shadow-lg transform transition duration-300 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className={`w-full px-6 py-3 rounded-md font-medium text-[#F0F4F8] bg-gradient-to-r from-[#4A6FA6] to-[#5A54A3] hover:from-[#3A5F96] hover:to-[#4A4493] shadow-lg transition-all duration-300 ease-in-out ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''} focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:ring-offset-2 focus:ring-offset-[#050C1C]`}
-          >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-[#F0F4F8]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Processing...
-              </span>
-            ) : (
-              "Generate Quote"
-            )}
-          </button>
-        </motion.div>
-      </ScrollAnimation>
+          {isSubmitting ? (
+            <div className="flex items-center justify-center">
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Processing...
+            </div>
+          ) : (
+            "Submit"
+          )}
+        </button>
+      </div>
     </form>
   );
 }; 

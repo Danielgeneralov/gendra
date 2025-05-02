@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 
-// Industry configurations
+// Set to 'force-dynamic' to bypass caching issues
+export const dynamic = 'force-dynamic';
+
+// Complete industry configurations with formFields
 const industryConfigs = {
   metal_fabrication: {
     id: "metal_fabrication",
@@ -61,30 +64,6 @@ const industryConfigs = {
           { value: "high", label: "High - Complex geometry and features" }
         ],
         required: true
-      },
-      {
-        id: "surface_finish",
-        label: "Surface Finish",
-        type: "select",
-        options: [
-          { value: "none", label: "None - As fabricated" },
-          { value: "powder_coat", label: "Powder Coating" },
-          { value: "anodized", label: "Anodized (Aluminum only)" },
-          { value: "brushed", label: "Brushed" },
-          { value: "polished", label: "Polished" }
-        ],
-        required: true
-      },
-      {
-        id: "lead_time",
-        label: "Desired Lead Time",
-        type: "select",
-        options: [
-          { value: "standard", label: "Standard (10-15 business days)" },
-          { value: "expedited", label: "Expedited (5-7 business days)" },
-          { value: "rush", label: "Rush (2-4 business days)" }
-        ],
-        required: true
       }
     ],
     complexityLevels: [
@@ -126,14 +105,6 @@ const industryConfigs = {
         required: true
       },
       {
-        id: "wall_thickness",
-        label: "Wall Thickness (mm)",
-        type: "number",
-        min: 0.5,
-        max: 10,
-        required: true
-      },
-      {
         id: "quantity",
         label: "Quantity",
         type: "number",
@@ -142,49 +113,13 @@ const industryConfigs = {
         required: true
       },
       {
-        id: "cavity_count",
-        label: "Cavity Count",
+        id: "complexity",
+        label: "Part Complexity",
         type: "select",
         options: [
-          { value: "1", label: "Single Cavity" },
-          { value: "2", label: "2 Cavities" },
-          { value: "4", label: "4 Cavities" },
-          { value: "8", label: "8 Cavities" }
-        ],
-        required: true
-      },
-      {
-        id: "surface_finish",
-        label: "Surface Finish",
-        type: "select",
-        options: [
-          { value: "standard", label: "Standard (SPI-C1)" },
-          { value: "smooth", label: "Smooth (SPI-A2)" },
-          { value: "textured", label: "Textured" },
-          { value: "high_gloss", label: "High Gloss" }
-        ],
-        required: true
-      },
-      {
-        id: "color",
-        label: "Color",
-        type: "select",
-        options: [
-          { value: "natural", label: "Natural (No colorant)" },
-          { value: "black", label: "Black" },
-          { value: "white", label: "White" },
-          { value: "custom", label: "Custom Color" }
-        ],
-        required: true
-      },
-      {
-        id: "lead_time",
-        label: "Desired Lead Time",
-        type: "select",
-        options: [
-          { value: "standard", label: "Standard (3-4 weeks)" },
-          { value: "expedited", label: "Expedited (2 weeks)" },
-          { value: "rush", label: "Rush (1 week)" }
+          { value: "low", label: "Low - Simple geometry" },
+          { value: "medium", label: "Medium - Some features" },
+          { value: "high", label: "High - Complex features" }
         ],
         required: true
       }
@@ -199,21 +134,17 @@ const industryConfigs = {
   }
 };
 
-export async function GET(
-  request: Request,
-  context: { params: { industryId: string } }
-) {
-  // Wait for params to be resolved
-  const { industryId } = await Promise.resolve(context.params);
-
-  // Check if the requested industry exists
+// Route handler for GET requests
+export async function GET(request: Request) {
+  // Extract industryId from URL path
+  const path = new URL(request.url).pathname;
+  const industryId = path.split('/').pop() || '';
+  
+  // Check if industry exists
   if (!industryConfigs[industryId as keyof typeof industryConfigs]) {
-    return NextResponse.json(
-      { error: `Industry '${industryId}' not found` },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: `Industry not found` }, { status: 404 });
   }
-
-  // Return the industry config
+  
+  // Return data
   return NextResponse.json(industryConfigs[industryId as keyof typeof industryConfigs]);
 } 
