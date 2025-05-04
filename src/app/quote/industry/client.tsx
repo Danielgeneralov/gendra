@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ScrollAnimation } from "../../components/ScrollAnimation";
 import { IndustrySelector } from "../../components/IndustrySelector";
@@ -15,7 +15,16 @@ interface FormData {
   [key: string]: string | number | boolean;
 }
 
+// Wrapper to use Suspense
 export default function IndustryQuotePage() {
+  return (
+    <Suspense fallback={<div className="text-white text-center mt-10">Loading...</div>}>
+      <ClientContent />
+    </Suspense>
+  );
+}
+
+function ClientContent() {
   const searchParams = useSearchParams();
   const [selectedIndustry, setSelectedIndustry] = useState<string>(
     searchParams?.get("industry") || DEFAULT_INDUSTRY
