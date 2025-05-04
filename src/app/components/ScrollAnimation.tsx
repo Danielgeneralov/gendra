@@ -1,8 +1,8 @@
-"use client";
+// /components/ScrollAnimation.tsx
+'use client';
 
-import { ReactNode } from "react";
+import { ReactNode, useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
 
 interface ScrollAnimationProps {
   children: ReactNode;
@@ -21,19 +21,16 @@ export function ScrollAnimation({
 }: ScrollAnimationProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { amount: threshold, once });
-  
+
   const variants = {
-    hidden: {
-      opacity: 0,
-      y: 15,
-    },
+    hidden: { opacity: 0, y: 15 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
         duration: 1.4,
         delay,
-        ease: [0.2, 0.0, 0.2, 1.0], // More dramatic easing curve for a luxurious feel
+        ease: [0.2, 0.0, 0.2, 1.0],
       },
     },
   };
@@ -49,4 +46,4 @@ export function ScrollAnimation({
       {children}
     </motion.div>
   );
-} 
+}
