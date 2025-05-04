@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -24,33 +24,39 @@ export const IndustrySelector = ({
 }: IndustrySelectorProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedIndustry, setSelectedIndustry] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+
+  // ✅ Memoized helper to update URL params
+  const updateURLParams = useCallback((industryId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("industry", industryId);
+    router.push(`?${params.toString()}`, { scroll: false });
+  }, [router, searchParams]);
 
   // Fetch industries from API
   useEffect(() => {
     const fetchIndustries = async () => {
       setIsLoading(true);
       setError(null);
-      
+
       try {
         const response = await fetch("/api/v1/industries");
-        if (!response.ok) {
-          throw new Error(`Error fetching industries: ${response.status}`);
-        }
-        
+        if (!response.ok) throw new Error(`Error: ${response.status}`);
         const data = await response.json();
+
         setIndustries(data.industries);
-        
-        // Set default industry if none selected
+
         const industryParam = searchParams.get("industry");
         if (industryParam && data.industries.some((ind: Industry) => ind.id === industryParam)) {
           setSelectedIndustry(industryParam);
         } else if (data.industries.length > 0) {
-          setSelectedIndustry(data.industries[0].id);
-          updateURLParams(data.industries[0].id);
+          const defaultId = data.industries[0].id;
+          setSelectedIndustry(defaultId);
+          updateURLParams(defaultId);
         }
       } catch (err) {
         console.error("Failed to fetch industries:", err);
@@ -59,31 +65,18 @@ export const IndustrySelector = ({
         setIsLoading(false);
       }
     };
-    
+
     fetchIndustries();
-  }, [searchParams]);
+  }, [searchParams, updateURLParams]);
 
-  // Update URL when industry changes
-  const updateURLParams = (industryId: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("industry", industryId);
-    router.push(`?${params.toString()}`, { scroll: false });
-  };
-
-  // Handle industry selection
   const handleIndustryChange = (industryId: string) => {
     setSelectedIndustry(industryId);
     updateURLParams(industryId);
-    
-    if (onIndustryChange) {
-      onIndustryChange(industryId);
-    }
+    onIndustryChange?.(industryId);
   };
 
-  // Find selected industry object
   const selectedIndustryObj = industries.find(ind => ind.id === selectedIndustry);
 
-  // Render loading state
   if (isLoading) {
     return (
       <div className={`animate-pulse bg-[#0A1828]/50 rounded-md p-4 ${className}`}>
@@ -93,7 +86,6 @@ export const IndustrySelector = ({
     );
   }
 
-  // Render error state
   if (error) {
     return (
       <div className={`bg-red-900/30 border border-red-800/50 rounded-md p-4 text-red-200 ${className}`}>
@@ -102,7 +94,6 @@ export const IndustrySelector = ({
     );
   }
 
-  // Render dropdown selector
   if (displayMode === "dropdown") {
     return (
       <div className={`space-y-2 ${className}`}>
@@ -121,7 +112,7 @@ export const IndustrySelector = ({
             </option>
           ))}
         </select>
-        
+
         {selectedIndustryObj && (
           <AnimatePresence mode="wait">
             <motion.div
@@ -140,28 +131,25 @@ export const IndustrySelector = ({
     );
   }
 
-  // Render tabs selector (default)
   return (
     <div className={className}>
       <div className="border-b border-[#050C1C]/80">
         <nav className="-mb-px flex space-x-1 overflow-x-auto" aria-label="Industry Selection">
           {industries.map((industry) => {
             const isActive = selectedIndustry === industry.id;
-            
             return (
               <button
                 key={industry.id}
                 onClick={() => handleIndustryChange(industry.id)}
-                className={`
-                  whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm flex items-center transition-all duration-300
-                  ${isActive 
-                    ? 'border-[#FFD700] text-[#E6C300]'
-                    : 'border-transparent text-[#CBD5E1] hover:text-[#F0F4F8] hover:border-[#4A6FA6]'}
-                `}
-                aria-current={isActive ? 'page' : undefined}
+                className={`whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm flex items-center transition-all duration-300 ${
+                  isActive
+                    ? "border-[#FFD700] text-[#E6C300]"
+                    : "border-transparent text-[#CBD5E1] hover:text-[#F0F4F8] hover:border-[#4A6FA6]"
+                }`}
+                aria-current={isActive ? "page" : undefined}
               >
-                <span 
-                  className={`mr-2 ${isActive ? 'text-[#E6C300]' : 'text-[#4A6FA6]'}`}
+                <span
+                  className={`mr-2 ${isActive ? "text-[#E6C300]" : "text-[#4A6FA6]"}`}
                   dangerouslySetInnerHTML={{ __html: industry.icon }}
                 />
                 {industry.name}
@@ -170,7 +158,7 @@ export const IndustrySelector = ({
           })}
         </nav>
       </div>
-      
+
       {selectedIndustryObj && (
         <AnimatePresence mode="wait">
           <motion.div
@@ -187,4 +175,4 @@ export const IndustrySelector = ({
       )}
     </div>
   );
-}; 
+};

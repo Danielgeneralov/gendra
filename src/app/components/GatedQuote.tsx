@@ -3,8 +3,7 @@
 import { useState, FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MotionButton } from "./MotionButton";
-import { createClient } from '@supabase/supabase-js';
-import { supabase as supabaseOriginal } from "../supabase";
+import { supabase } from "../supabase";
 
 type GatedQuoteProps = {
   quoteAmount: number | null;
@@ -16,50 +15,6 @@ type GatedQuoteProps = {
     complexity: string;
     deadline: string;
   };
-};
-
-const saveLeadToSupabase = async (email: string, quoteAmount: number, formData: any) => {
-  try {
-    const supabaseUrl = 'https://cpnbybkgniwshqavvnlz.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwbmJ5Ymtnbml3c2hxYXZ2bmx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI4NDg3MDEsImV4cCI6MjA1ODQyNDcwMX0.OXARQAInCNo8IX7qF2OjqABzDws6csfr8q4JzSZL6ec';
-    
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase credentials');
-      return false;
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    console.log("Attempting to save lead to quote_leads (direct client):", {
-      email,
-      quote_amount: quoteAmount,
-      created_at: new Date().toISOString(),
-      is_contacted: false,
-      notes: `Quote for ${formData.partType}, ${formData.material}, qty: ${formData.quantity}`
-    });
-    
-    const { data, error } = await supabase
-      .from('quote_leads')
-      .insert({
-        email,
-        quote_amount: quoteAmount,
-        created_at: new Date().toISOString(),
-        is_contacted: false,
-        notes: `Quote for ${formData.partType}, ${formData.material}, qty: ${formData.quantity}`
-      })
-      .select();
-    
-    if (error) {
-      console.error("Error saving lead (direct client):", error);
-      return false;
-    } else {
-      console.log("Successfully saved lead (direct client):", data);
-      return true;
-    }
-  } catch (err) {
-    console.error("Exception during direct lead save:", err);
-    return false;
-  }
 };
 
 export const GatedQuote = ({ quoteAmount, isLoading, formData }: GatedQuoteProps) => {
@@ -96,66 +51,60 @@ export const GatedQuote = ({ quoteAmount, isLoading, formData }: GatedQuoteProps
 
   const handleEmailSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
-    if (!validateEmail(email)) {
-      return;
-    }
+
+    if (!validateEmail(email) || !quoteAmount) return;
 
     setIsEmailSubmitting(true);
-    
+
     try {
-      // Try our direct implementation first
-      const saveResult = await saveLeadToSupabase(email, quoteAmount || 0, formData);
-      
-      // Fall back to original implementation if direct fails and supabase client exists
-      if (!saveResult && supabaseOriginal && quoteAmount) {
-        try {
-          console.log("Direct save failed, trying original client");
-          
-          const { data, error } = await supabaseOriginal
-            .from("quote_leads")
-            .insert({
-              email,
-              quote_amount: quoteAmount,
-              created_at: new Date().toISOString(),
-              is_contacted: false,
-              notes: `Quote for ${formData.partType}, ${formData.material}, qty: ${formData.quantity}`
-            })
-            .select();
-          
-          if (error) {
-            console.error("Error saving lead with original client:", error);
-          } else {
-            console.log("Successfully saved lead with original client:", data);
-          }
-        } catch (err) {
-          console.error("Exception during original client save:", err);
-        }
+      if (!supabase) {
+        console.error("Supabase client not initialized");
+        setSubmitStatus({
+          type: "error",
+          message: "Internal error – please try again later.",
+        });
+        return;
       }
-      
-      setEmailSubmitted(true);
-      setSubmitStatus({
-        type: "success",
-        message: "Thank you! Your exact quote is now available below."
-      });
+
+      const { error } = await supabase
+        .from("quote_leads")
+        .insert({
+          email,
+          quote_amount: quoteAmount,
+          created_at: new Date().toISOString(),
+          is_contacted: false,
+          notes: `Quote for ${formData.partType}, ${formData.material}, qty: ${formData.quantity}`,
+        });
+
+      if (error) {
+        console.error("Error saving lead:", error);
+        setSubmitStatus({
+          type: "error",
+          message: "There was an error saving your quote. Please try again.",
+        });
+      } else {
+        setEmailSubmitted(true);
+        setSubmitStatus({
+          type: "success",
+          message: "Thank you! Your exact quote is now available below.",
+        });
+      }
     } catch (err) {
-      console.error("Error submitting email:", err);
+      console.error("Unexpected error during email submission:", err);
       setSubmitStatus({
         type: "error",
-        message: "There was an error submitting your email. Please try again."
+        message: "Unexpected error occurred. Please try again.",
       });
     } finally {
       setIsEmailSubmitting(false);
     }
   };
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
     }).format(amount);
-  };
 
   if (isLoading) {
     return (
@@ -173,7 +122,7 @@ export const GatedQuote = ({ quoteAmount, isLoading, formData }: GatedQuoteProps
     <div className="mt-6">
       <AnimatePresence>
         {!emailSubmitted ? (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
@@ -186,7 +135,7 @@ export const GatedQuote = ({ quoteAmount, isLoading, formData }: GatedQuoteProps
             <p className="text-sm text-indigo-600 mt-2 mb-6">
               This estimated range is based on your specifications.
             </p>
-            
+
             <div className="border-t border-indigo-200 pt-6">
               <h3 className="text-md font-medium text-indigo-800 mb-2">
                 Want your exact quote and production timeline?
@@ -194,7 +143,7 @@ export const GatedQuote = ({ quoteAmount, isLoading, formData }: GatedQuoteProps
               <p className="text-sm text-indigo-600 mb-4">
                 Enter your email to unlock it.
               </p>
-              
+
               <form onSubmit={handleEmailSubmit} className="space-y-4">
                 <div>
                   <input
@@ -205,9 +154,7 @@ export const GatedQuote = ({ quoteAmount, isLoading, formData }: GatedQuoteProps
                       if (emailError) setEmailError(null);
                     }}
                     className={`block w-full px-4 py-2 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-                      emailError 
-                        ? "border-red-300" 
-                        : "border-slate-300"
+                      emailError ? "border-red-300" : "border-slate-300"
                     }`}
                     placeholder="Your email address"
                   />
@@ -218,7 +165,7 @@ export const GatedQuote = ({ quoteAmount, isLoading, formData }: GatedQuoteProps
                     We won't spam you. We just want to help you quote smarter.
                   </p>
                 </div>
-                
+
                 <MotionButton
                   type="submit"
                   primary
@@ -231,14 +178,14 @@ export const GatedQuote = ({ quoteAmount, isLoading, formData }: GatedQuoteProps
             </div>
           </motion.div>
         ) : (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
             className="p-4 bg-green-50 border border-green-100 rounded-md"
           >
             {submitStatus.type === "success" && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
@@ -247,7 +194,7 @@ export const GatedQuote = ({ quoteAmount, isLoading, formData }: GatedQuoteProps
                 {submitStatus.message}
               </motion.div>
             )}
-            
+
             <h2 className="text-lg font-medium text-green-800">Exact Quote</h2>
             <p className="text-3xl font-bold text-green-700 mt-2">
               {formatCurrency(quoteAmount)}
@@ -255,9 +202,11 @@ export const GatedQuote = ({ quoteAmount, isLoading, formData }: GatedQuoteProps
             <p className="text-sm text-green-600 mt-2">
               This quote is valid for 30 days and includes all manufacturing costs.
             </p>
-            
+
             <div className="mt-4 p-3 rounded-md bg-green-100/50 border border-green-100">
-              <h3 className="text-md font-medium text-green-800 mb-1">Production Timeline</h3>
+              <h3 className="text-md font-medium text-green-800 mb-1">
+                Production Timeline
+              </h3>
               <p className="text-sm text-green-700">
                 Standard production: 7-10 business days
               </p>
@@ -270,4 +219,4 @@ export const GatedQuote = ({ quoteAmount, isLoading, formData }: GatedQuoteProps
       </AnimatePresence>
     </div>
   );
-}; 
+};

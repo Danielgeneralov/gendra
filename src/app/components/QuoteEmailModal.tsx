@@ -3,7 +3,7 @@
 import { useState, FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MotionButton } from "./MotionButton";
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 import { supabase as supabaseOriginal } from "../supabase";
 
 type QuoteEmailModalProps = {
@@ -21,46 +21,48 @@ type QuoteEmailModalProps = {
   quoteAmount: number | null;
 };
 
-const saveLeadToSupabase = async (email: string, quoteAmount: number, formData: any) => {
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
+
+const saveLeadToSupabase = async (
+  email: string,
+  quoteAmount: number,
+  formData: QuoteEmailModalProps["formData"]
+) => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error("Missing Supabase credentials from env");
+    return false;
+  }
+
   try {
-    const supabaseUrl = 'https://cpnbybkgniwshqavvnlz.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwbmJ5Ymtnbml3c2hxYXZ2bmx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI4NDg3MDEsImV4cCI6MjA1ODQyNDcwMX0.OXARQAInCNo8IX7qF2OjqABzDws6csfr8q4JzSZL6ec';
-    
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase credentials');
-      return false;
-    }
-    
     const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    console.log("Attempting to save lead to quote_leads from modal (direct client):", {
-      email,
-      quote_amount: quoteAmount,
-      created_at: new Date().toISOString(),
-      is_contacted: false,
-      notes: `Quote for ${formData.partType}, ${formData.material}, qty: ${formData.quantity}`
-    });
-    
+
     const { data, error } = await supabase
-      .from('quote_leads')
+      .from("quote_leads")
       .insert({
         email,
         quote_amount: quoteAmount,
         created_at: new Date().toISOString(),
         is_contacted: false,
-        notes: `Quote for ${formData.partType}, ${formData.material}, qty: ${formData.quantity}`
+        notes: `Quote for ${formData.partType}, ${formData.material}, qty: ${formData.quantity}`,
       })
       .select();
-    
+
     if (error) {
       console.error("Error saving lead from modal (direct client):", error);
       return false;
-    } else {
-      console.log("Successfully saved lead from modal (direct client):", data);
-      return true;
     }
+
+    console.log("Successfully saved lead from modal:", data);
+    return true;
   } catch (err) {
-    console.error("Exception during direct lead save from modal:", err);
+    console.error("Exception during lead save from modal:", err);
     return false;
   }
 };
@@ -71,18 +73,11 @@ export const QuoteEmailModal = ({
   onEmailSubmit,
   quoteRange,
   formData,
-  quoteAmount
+  quoteAmount,
 }: QuoteEmailModalProps) => {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -100,50 +95,34 @@ export const QuoteEmailModal = ({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
-    if (!validateEmail(email)) {
-      return;
-    }
+    if (!validateEmail(email)) return;
 
     setIsSubmitting(true);
-    
     try {
       if (quoteAmount) {
-        const saveResult = await saveLeadToSupabase(email, quoteAmount, formData);
-        
-        if (!saveResult && supabaseOriginal) {
-          try {
-            console.log("Direct save failed in modal, trying original client");
-            
-            const { data, error } = await supabaseOriginal
-              .from("quote_leads")
-              .insert({
-                email,
-                quote_amount: quoteAmount,
-                created_at: new Date().toISOString(),
-                is_contacted: false,
-                notes: `Quote for ${formData.partType}, ${formData.material}, qty: ${formData.quantity}`
-              })
-              .select();
-            
-            if (error) {
-              console.error("Error saving lead with original client from modal:", error);
-            } else {
-              console.log("Successfully saved lead with original client from modal:", data);
-            }
-          } catch (err) {
-            console.error("Exception during original client save from modal:", err);
-          }
+        const saved = await saveLeadToSupabase(email, quoteAmount, formData);
+
+        if (!saved && supabaseOriginal?.from) {
+          const { data, error } = await supabaseOriginal
+            .from("quote_leads")
+            .insert({
+              email,
+              quote_amount: quoteAmount,
+              created_at: new Date().toISOString(),
+              is_contacted: false,
+              notes: `Quote for ${formData.partType}, ${formData.material}, qty: ${formData.quantity}`,
+            })
+            .select();
+
+          if (error) console.error("Fallback save error:", error);
+          else console.log("Fallback save succeeded:", data);
         }
-      } else {
-        console.warn("Quote amount is not available for modal save");
       }
-      
+
       onEmailSubmit(email);
-      
       onClose();
     } catch (err) {
-      console.error("Error submitting email from modal:", err);
+      console.error("Submit error in modal:", err);
       setEmailError("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -161,7 +140,7 @@ export const QuoteEmailModal = ({
             className="fixed inset-0 bg-black/50"
             onClick={onClose}
           />
-          
+
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -174,18 +153,23 @@ export const QuoteEmailModal = ({
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
               aria-label="Close modal"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
-            
+
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-slate-900 mb-2">Unlock Your Exact Quote</h2>
               <p className="text-slate-600">
-                You're just one step away from accessing your exact quote and production timeline.
+                You&apos;re just one step away from accessing your exact quote and production timeline.
               </p>
             </div>
-            
+
             {quoteRange && (
               <div className="mb-6 p-4 bg-indigo-50 rounded-md text-center">
                 <h3 className="font-medium text-indigo-800 mb-1">Your Quote Range</h3>
@@ -194,7 +178,7 @@ export const QuoteEmailModal = ({
                 </p>
               </div>
             )}
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
@@ -213,24 +197,15 @@ export const QuoteEmailModal = ({
                   }`}
                   placeholder="you@company.com"
                 />
-                {emailError && (
-                  <p className="mt-1 text-sm text-red-600">{emailError}</p>
-                )}
+                {emailError && <p className="mt-1 text-sm text-red-600">{emailError}</p>}
               </div>
-              
+
               <div className="text-xs text-slate-500">
-                <p>
-                  We won't spam you. We just want to help you quote smarter.
-                </p>
+                <p>We won&apos;t spam you. We just want to help you quote smarter.</p>
               </div>
-              
+
               <div className="pt-2">
-                <MotionButton
-                  type="submit"
-                  primary
-                  className="w-full"
-                  disabled={isSubmitting}
-                >
+                <MotionButton type="submit" primary className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? "Processing..." : "Show Exact Quote"}
                 </MotionButton>
               </div>
@@ -240,4 +215,4 @@ export const QuoteEmailModal = ({
       )}
     </AnimatePresence>
   );
-}; 
+};
