@@ -1,16 +1,24 @@
 import { NextResponse } from 'next/server';
 import { parseRFQ, MissingAPIKeyError } from '@/lib/groqParser';
 
-// Hardcoded API key for Groq
-const GROQ_API_KEY = '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';
+// Hardcoded API key for Groq - consider moving this to an environment variable
+// This is a sample key format, replace with your actual key
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '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';
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
     console.log("API route: Received request to parse RFQ");
     
-    // Use hardcoded API key instead of environment variable
-    const apiKey = GROQ_API_KEY;
-    console.log("API route: Using hardcoded GROQ_API_KEY");
+    // Check API key validity (at least format-wise)
+    if (!GROQ_API_KEY || !GROQ_API_KEY.startsWith('gsk_')) {
+      console.error("API route: Invalid API key format");
+      return NextResponse.json(
+        { error: 'Invalid API key format' },
+        { status: 500 }
+      );
+    }
+    
+    console.log("API route: Using configured GROQ_API_KEY");
     
     // Parse the request body
     const body = await request.json();
@@ -30,9 +38,19 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    // Call the RFQ parser with the hardcoded API key
-    console.log("API route: Calling parseRFQ function with hardcoded API key");
-    const parsedRFQ = await parseRFQ(body.text, apiKey);
+    if (body.text.length < 50) {
+      console.warn("API route: Text is too short, might not contain enough information", body.text);
+      return NextResponse.json(
+        { error: 'Text is too short to be a valid RFQ. Please provide more complete information.' },
+        { status: 400 }
+      );
+    }
+
+    // Call the RFQ parser with the configured API key
+    console.log("API route: Calling parseRFQ function with provided API key");
+    console.log("API route: First 100 chars of text:", body.text.substring(0, 100) + "...");
+    
+    const parsedRFQ = await parseRFQ(body.text, GROQ_API_KEY);
     
     // Validate the parsed result to make sure it's not returning defaults due to failure
     const isDefaultResult = 
@@ -45,9 +63,15 @@ export async function POST(request: Request): Promise<NextResponse> {
     
     if (isDefaultResult) {
       console.warn("API route: parseRFQ returned default values, indicating a potential failure");
+      console.warn("API route: Model used:", parsedRFQ.modelUsed);
+      
       // Return a more meaningful error instead of empty defaults
       return NextResponse.json(
-        { error: 'The parser failed to extract meaningful data from the provided text' },
+        { 
+          error: 'The parser failed to extract meaningful data from the provided text',
+          details: 'Please check if the text contains the required RFQ information in a readable format',
+          modelUsed: parsedRFQ.modelUsed
+        },
         { status: 422 } // Unprocessable Entity
       );
     }
@@ -57,7 +81,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       hasMaterial: !!parsedRFQ.material,
       hasQuantity: parsedRFQ.quantity > 0,
       hasDimensions: parsedRFQ.dimensions.length > 0 || parsedRFQ.dimensions.width > 0 || parsedRFQ.dimensions.height > 0,
-      hasIndustry: !!parsedRFQ.industry
+      hasIndustry: !!parsedRFQ.industry,
+      modelUsed: parsedRFQ.modelUsed
     });
     
     return NextResponse.json(parsedRFQ);

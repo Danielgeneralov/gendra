@@ -1,9 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Move tracing config to root level as per Next.js 15.x recommendations
+  outputFileTracingExcludes: { 
+    '*': ['node_modules/**', '.git/**', '.next/**'] 
+  },
+  outputFileTracingRoot: process.cwd(),
+  
   // Configure experimental features
   experimental: {
-    disableOptimizedLoading: false
+    disableOptimizedLoading: false,
   },
+  
   // Add webpack configuration to exclude Python files and the python directory
   webpack: (config, { isServer }) => {
     // Ignore the python directory completely
@@ -20,7 +27,14 @@ const nextConfig = {
     
     return config;
   },
-  // Add other configs as needed
+  
+  // Add more reliable error handling for Windows environments
+  onDemandEntries: {
+    // Keep pages in memory longer to avoid rebuilds
+    maxInactiveAge: 60 * 60 * 1000,
+    // Reduce number of pages in memory for stability
+    pagesBufferLength: 5,
+  },
 };
 
 module.exports = nextConfig; 

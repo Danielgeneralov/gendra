@@ -20,6 +20,20 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Backend Services
+
+This project includes a Python FastAPI backend for advanced quote calculations:
+
+```bash
+cd backend
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+## System Documentation
+
+For a complete overview of the system architecture, recent changes, and troubleshooting information, 
+please see the [ONBOARDING.md](./backend/ONBOARDING.md) file in the backend directory.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

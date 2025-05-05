@@ -53,6 +53,14 @@ export default function RFQUploader({
       const parsedData = await parseResponse.json() as ParsedRFQ;
       setParsedRFQ(parsedData);
       
+      // Store parsed data in sessionStorage for form prefilling
+      try {
+        sessionStorage.setItem('lastParsedRFQ', JSON.stringify(parsedData));
+        console.log('RFQ data stored in sessionStorage for prefilling');
+      } catch (storageError) {
+        console.error('Error storing RFQ data in sessionStorage:', storageError);
+      }
+      
       // Call the callback if provided
       if (onParsedRFQ) {
         onParsedRFQ(parsedData, parsedData.industry);

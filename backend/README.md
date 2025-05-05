@@ -32,3 +32,8 @@ The server will run at [http://localhost:8000](http://localhost:8000)
 FastAPI automatically generates interactive API documentation:
 - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
 - ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc) 
+
+## System Documentation
+
+For a complete overview of the system, recent changes, and troubleshooting information, 
+please see the [ONBOARDING.md](./ONBOARDING.md) file in this directory. 
