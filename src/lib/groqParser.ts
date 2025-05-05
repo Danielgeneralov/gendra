@@ -252,7 +252,9 @@ export async function parseRFQ(input: string, overrideApiKey?: string): Promise<
           console.log('Attempting with alternative model...');
           return attemptWithAlternativeModel(input, apiKey, instructionsPrefix, controller);
         }
-      } catch (error) {
+      } catch (parseError) {
+        // Log parse error, but continue with getting raw text
+        console.error('Failed to parse error response as JSON:', parseError);
         const rawText = await response.text().catch(() => 'No text response');
         console.error('Groq API error (could not parse JSON response):', rawText);
       }
@@ -340,7 +342,9 @@ async function attemptWithAlternativeModel(
       try {
         const errorData = await response.json();
         console.error('Alternative model error details:', JSON.stringify(errorData, null, 2));
-      } catch (error) {
+      } catch (parseError) {
+        // Log parse error, but continue with getting raw text
+        console.error('Failed to parse alternative model error response as JSON:', parseError);
         const rawText = await response.text().catch(() => 'No text response');
         console.error('Alternative model error (could not parse JSON response):', rawText);
       }
