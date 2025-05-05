@@ -36,10 +36,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // This filters out any fields marked as backendOnly
     const config = getFrontendConfig(industryConfig);
     
-    // Determine if this is a backend request (can include a special header)
-    const isBackendRequest = request.headers.get('x-api-source') === 'backend';
-    
-    // Return full config for backend requests, frontend config for frontend requests
+    // Return the config
     return NextResponse.json({
       ...config,
       message: "Use the /api/v1/quote-calculate endpoint with POST for actual quote calculations"

@@ -35,7 +35,7 @@ interface BaseFormField {
   readonly label: string;
   readonly type: FormFieldType;
   readonly required?: boolean;
-  readonly defaultValue?: any;
+  readonly defaultValue?: unknown;
   readonly description?: string;
   readonly placeholder?: string;
   readonly backendOnly?: boolean; // Fields only used in backend calculations

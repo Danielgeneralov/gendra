@@ -174,7 +174,7 @@ export type DbComplexityLevel = {
 // Example function to fetch industry config from Supabase
 // This would replace the static INDUSTRY_REGISTRY object
 import { createClient } from '@supabase/supabase-js';
-import { IndustryConfig, FormField, FormFieldType, SelectOption, Material, ComplexityLevel } from './industryRegistry';
+import { IndustryConfig, FormField, FormFieldType, SelectOption, Material, ComplexityLevel, PricingMode } from './industryRegistry';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -214,7 +214,7 @@ export async function getIndustryConfigFromDb(industryId: string): Promise<Indus
     }
     
     // Fetch select options for all form fields
-    let formFieldIds = formFields.map(field => field.id);
+    const formFieldIds = formFields.map(field => field.id);
     const { data: selectOptions, error: selectOptionsError } = await supabase
       .from('select_options')
       .select('*')
@@ -280,36 +280,38 @@ export async function getIndustryConfigFromDb(industryId: string): Promise<Indus
             max: field.max,
             step: field.step,
             unit: field.unit,
-          };
+          } as FormField;
         case FormFieldType.TEXT:
           return {
             ...baseField,
             minLength: field.min_length,
             maxLength: field.max_length,
             pattern: field.pattern,
-          };
+          } as FormField;
         case FormFieldType.SELECT:
           return {
             ...baseField,
             options: fieldOptions as SelectOption[],
             multiple: field.multiple,
-          };
+          } as FormField;
         case FormFieldType.CHECKBOX:
-          return baseField;
+          return baseField as FormField;
         case FormFieldType.DATE:
           return {
             ...baseField,
             minDate: field.min_date,
             maxDate: field.max_date,
-          };
+          } as FormField;
         case FormFieldType.TEXTAREA:
           return {
             ...baseField,
             rows: field.rows,
             cols: field.cols,
-          };
+          } as FormField;
         default:
-          return baseField;
+          // This is a fallback to handle unknown field types
+          // It will at least ensure the base properties are included
+          return baseField as unknown as FormField;
       }
     });
     
@@ -334,7 +336,7 @@ export async function getIndustryConfigFromDb(industryId: string): Promise<Indus
       id: industry.industry_id,
       name: industry.name,
       description: industry.description,
-      pricingMode: industry.pricing_mode as any,
+      pricingMode: industry.pricing_mode as PricingMode,
       icon: industry.icon,
       basePrice: industry.base_price,
       formFields: transformedFormFields,

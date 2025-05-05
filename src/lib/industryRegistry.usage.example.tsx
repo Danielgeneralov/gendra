@@ -5,8 +5,7 @@ import {
   getIndustryConfig, 
   IndustryConfig, 
   FormField, 
-  FormFieldType,
-  PricingMode 
+  FormFieldType
 } from './industryRegistry';
 
 /**
@@ -14,7 +13,7 @@ import {
  */
 export default function DynamicIndustryForm({ industryId }: { industryId: string }) {
   const [config, setConfig] = useState<IndustryConfig | null>(null);
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [formData, setFormData] = useState<Record<string, string | number | boolean>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,18 +30,19 @@ export default function DynamicIndustryForm({ industryId }: { industryId: string
       }
       
       // Initialize form data with default values
-      const initialData: Record<string, any> = {};
+      const initialData: Record<string, string | number | boolean> = {};
       industryConfig.formFields.forEach(field => {
         if (field.defaultValue !== undefined) {
-          initialData[field.id] = field.defaultValue;
+          initialData[field.id] = field.defaultValue as string | number | boolean;
         }
       });
       
       setConfig(industryConfig);
       setFormData(initialData);
       setLoading(false);
-    } catch (err) {
+    } catch (error) {
       setError('Failed to load industry configuration');
+      console.error('Error loading industry configuration:', error);
       setLoading(false);
     }
   }, [industryId]);
@@ -135,7 +135,7 @@ export default function DynamicIndustryForm({ industryId }: { industryId: string
             type="text"
             id={field.id}
             name={field.id}
-            value={formData[field.id] || ''}
+            value={(formData[field.id] as string) || ''}
             onChange={handleInputChange}
             placeholder={field.placeholder}
             required={field.required}
@@ -149,7 +149,7 @@ export default function DynamicIndustryForm({ industryId }: { industryId: string
             type="number"
             id={field.id}
             name={field.id}
-            value={formData[field.id] || ''}
+            value={(formData[field.id] as number) || ''}
             onChange={handleInputChange}
             min={field.min}
             max={field.max}
@@ -164,7 +164,7 @@ export default function DynamicIndustryForm({ industryId }: { industryId: string
           <select
             id={field.id}
             name={field.id}
-            value={formData[field.id] || ''}
+            value={(formData[field.id] as string) || ''}
             onChange={handleInputChange}
             required={field.required}
             multiple={field.multiple}
@@ -184,7 +184,7 @@ export default function DynamicIndustryForm({ industryId }: { industryId: string
             type="checkbox"
             id={field.id}
             name={field.id}
-            checked={formData[field.id] || false}
+            checked={(formData[field.id] as boolean) || false}
             onChange={handleInputChange}
             className="h-4 w-4 text-[#4A6FA6] focus:ring-[#4A6FA6] border-[#24334A] rounded"
           />
@@ -196,7 +196,7 @@ export default function DynamicIndustryForm({ industryId }: { industryId: string
             type="date"
             id={field.id}
             name={field.id}
-            value={formData[field.id] || ''}
+            value={(formData[field.id] as string) || ''}
             onChange={handleInputChange}
             min={field.minDate}
             max={field.maxDate}
@@ -210,7 +210,7 @@ export default function DynamicIndustryForm({ industryId }: { industryId: string
           <textarea
             id={field.id}
             name={field.id}
-            value={formData[field.id] || ''}
+            value={(formData[field.id] as string) || ''}
             onChange={handleInputChange}
             rows={field.rows}
             cols={field.cols}
