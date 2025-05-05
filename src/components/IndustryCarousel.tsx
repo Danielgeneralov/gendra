@@ -22,9 +22,6 @@ export default function IndustryCarousel({ industries }: IndustryCarouselProps) 
   const [isPaused, setIsPaused] = useState(false);
   const [carouselWidth, setCarouselWidth] = useState(0);
   
-  // Calculate the width of a single card plus margin (300px is approximate)
-  const cardWidth = 300;
-  
   // Handle navigation when clicking on an industry
   const handleIndustryClick = (industryId: string) => {
     router.push(`/quote/${industryId}`);

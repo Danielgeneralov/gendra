@@ -162,7 +162,7 @@ export const GatedQuote = ({ quoteAmount, isLoading, formData }: GatedQuoteProps
                     <p className="mt-1 text-sm text-red-600">{emailError}</p>
                   )}
                   <p className="mt-2 text-xs text-slate-500">
-                    We won't spam you. We just want to help you quote smarter.
+                    We won&apos;t spam you. We just want to help you quote smarter.
                   </p>
                 </div>
 

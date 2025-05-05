@@ -12,7 +12,7 @@ export default function ParseRFQPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white mb-4">Gendra RFQ Parser</h1>
           <p className="text-gray-400">
-            Paste in any manufacturing RFQ and we'll structure it automatically.
+            Paste in any manufacturing RFQ and we&apos;ll structure it automatically.
           </p>
         </div>
         

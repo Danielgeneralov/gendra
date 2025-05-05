@@ -79,7 +79,7 @@ export default function RFQPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white">RFQ Parser</h1>
           <p className="mt-2 text-gray-400">
-            Paste your Request for Quote text and we'll extract structured data using Groq AI
+            Paste your Request for Quote text and we&apos;ll extract structured data using Groq AI
           </p>
         </div>
         

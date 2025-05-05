@@ -77,7 +77,7 @@ export const QuoteCalculator = ({
     if (Object.keys(formData).length > 0) {
       calculateQuote();
     }
-  }, [calculateQuote]);
+  }, [calculateQuote, formData]);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

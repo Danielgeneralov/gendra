@@ -19,7 +19,7 @@ export default function SchedulePage() {
               </div>
               <h2 className="text-xl font-semibold text-[#E2E8F0] mb-2">Schedule Management Coming Soon</h2>
               <p className="text-[#94A3B8] mb-8 max-w-lg mx-auto">
-                We're building a powerful scheduling tool to help you track production timelines, 
+                We&apos;re building a powerful scheduling tool to help you track production timelines, 
                 manage manufacturing capacity, and optimize your workflow.
               </p>
               <button

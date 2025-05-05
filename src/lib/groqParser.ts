@@ -125,7 +125,7 @@ export async function parseRFQ(input: string, overrideApiKey?: string): Promise<
           console.log('Attempting with alternative model...');
           return attemptWithAlternativeModel(input, apiKey, instructionsPrefix, controller);
         }
-      } catch (jsonError) {
+      } catch (error) {
         console.error('Groq API error (could not parse JSON response):', await response.text().catch(() => 'No text response'));
       }
       

@@ -56,7 +56,7 @@ export default function QuotePage() {
     } else {
       // No matching industry found
       setParsingFailed(true);
-      setParsingError(`Unknown industry: "${industryToUse}"`);
+      setParsingError(`Unknown industry: &quot;${industryToUse}&quot;`);
     }
   };
 

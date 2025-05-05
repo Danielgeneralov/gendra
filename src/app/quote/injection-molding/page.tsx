@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 
 type FormData = {
   material: string;
@@ -51,8 +50,8 @@ export default function InjectionMoldingPage() {
 
   const calculateQuote = () => {
     // Base costs
-    let baseMoldCost = 5000;
-    let baseUnitCost = 1.0;
+    const baseMoldCost = 5000;
+    const baseUnitCost = 1.0;
     
     // Material factors
     const materialFactors: Record<string, number> = {
@@ -118,7 +117,7 @@ export default function InjectionMoldingPage() {
     if (formData.complexity === 'medium') toolingTime += 5;
     if (formData.complexity === 'high') toolingTime += 10;
     
-    let productionTime = Math.ceil(formData.quantity / 5000) * 5; // 5 days per 5000 units
+    const productionTime = Math.ceil(formData.quantity / 5000) * 5; // 5 days per 5000 units
     
     setLeadTime(`${toolingTime + productionTime} days (${toolingTime} days tooling + ${productionTime} days production)`);
     setShowQuote(true);
