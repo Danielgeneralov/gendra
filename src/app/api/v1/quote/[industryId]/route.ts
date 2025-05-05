@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+// Define proper param context type for route handlers
+type RouteContext = {
+  params: {
+    industryId: string;
+  };
+};
+
 // -- config objects omitted for brevity, keep as-is --
 type ComplexityLevel = { factor: number; name: string; };
 type MaterialCosts = Record<string, number>;
@@ -78,10 +85,10 @@ interface QuoteFormData {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { industryId: string } }
+  context: RouteContext
 ): Promise<NextResponse> {
   try {
-    const { industryId } = params;
+    const { industryId } = context.params;
 
     const formData: QuoteFormData = await request.json();
 
