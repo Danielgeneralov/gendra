@@ -1,7 +1,9 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from pydantic import BaseModel, EmailStr, Field
 from typing import Dict, Any, Optional
 import os
+import json
+import logging
 from datetime import datetime
 import supabase
 from dotenv import load_dotenv
@@ -9,7 +11,69 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+# Configure structured logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(message)s'
+)
+logger = logging.getLogger("gendra_api")
+
+# Setup JSON formatter for logs
+class StructuredLogRecord(logging.LogRecord):
+    def getMessage(self):
+        msg = self.msg
+        if self.args:
+            if isinstance(self.args, dict):
+                msg = msg.format(**self.args)
+            else:
+                msg = msg.format(*self.args)
+        return msg
+
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            "level": record.levelname.lower(),
+            "timestamp": datetime.now().isoformat(),
+            "message": record.getMessage(),
+            "route": getattr(record, "route", None),
+            "event": getattr(record, "event", None),
+            "meta": getattr(record, "meta", {})
+        }
+        return json.dumps(log_record)
+
+# Apply formatter to logger
+handler = logging.StreamHandler()
+handler.setFormatter(JSONFormatter())
+logger.handlers = [handler]
+
+# FastAPI app
 app = FastAPI(title="Gendra AI Quote API")
+
+# Middleware to capture request information
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    # Get client IP
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        client_ip = forwarded.split(",")[0].strip()
+    else:
+        client_ip = request.client.host if request.client else "unknown"
+    
+    # Log request
+    log_extra = {
+        "route": request.url.path,
+        "event": "incoming_request",
+        "meta": {
+            "ip": client_ip,
+            "method": request.method,
+            "user_agent": request.headers.get("user-agent", "unknown")
+        }
+    }
+    logger.info("Incoming request", extra=log_extra)
+    
+    # Process request
+    response = await call_next(request)
+    return response
 
 # Supabase connection
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -73,8 +137,29 @@ def calculate_quote(material: str, quantity: int, complexity: str) -> Dict[str, 
     return {"min_amount": min_amount, "max_amount": max_amount}
 
 @app.post("/submit-quote", response_model=QuoteResponse)
-async def submit_quote(quote_request: QuoteRequest):
+async def submit_quote(quote_request: QuoteRequest, request: Request):
+    route_path = "/submit-quote"
     try:
+        # Get client IP
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            client_ip = forwarded.split(",")[0].strip()
+        else:
+            client_ip = request.client.host if request.client else "unknown"
+            
+        # Log quote request details (sanitized)
+        logger.info("Processing quote request", extra={
+            "route": route_path,
+            "event": "processing_quote",
+            "meta": {
+                "ip": client_ip,
+                "industry": quote_request.industry,
+                "material": quote_request.material,
+                "quantity": quote_request.quantity,
+                "email_domain": quote_request.email.split("@")[1] if "@" in quote_request.email else "unknown"
+            }
+        })
+        
         # Calculate quote range
         quote_range = calculate_quote(
             quote_request.material,
@@ -102,15 +187,43 @@ async def submit_quote(quote_request: QuoteRequest):
             "notes": f"Quote for {quote_request.industry}, {quote_request.material}, qty: {quote_request.quantity}"
         }
         
+        logger.info("Saving quote to database", extra={
+            "route": route_path,
+            "event": "saving_quote",
+            "meta": {
+                "ip": client_ip,
+                "industry": quote_request.industry,
+                "quote_amount": quote_amount
+            }
+        })
+        
         # Insert data into Supabase
         result = supabase_client.table("quote_leads").insert(quote_data).execute()
         
         # Check for errors
         if hasattr(result, 'error') and result.error:
+            logger.error("Database error", extra={
+                "route": route_path,
+                "event": "database_error",
+                "meta": {
+                    "error": str(result.error)
+                }
+            })
             raise HTTPException(status_code=500, detail=f"Failed to save quote: {result.error}")
         
         # Return success response with quote range
         lead_time_estimate = "5-7 business days" if quote_request.lead_time_preference == "Rush" else "10-14 business days"
+        
+        logger.info("Quote submitted successfully", extra={
+            "route": route_path,
+            "event": "quote_success",
+            "meta": {
+                "ip": client_ip,
+                "industry": quote_request.industry,
+                "quote_min": quote_range["min_amount"],
+                "quote_max": quote_range["max_amount"]
+            }
+        })
         
         return {
             "success": True,
@@ -120,17 +233,38 @@ async def submit_quote(quote_request: QuoteRequest):
         }
         
     except Exception as e:
-        # Log the error and return a friendly message
-        print(f"Error processing quote submission: {str(e)}")
+        # Log the error with structured format
+        logger.error("Quote submission error", extra={
+            "route": route_path,
+            "event": "quote_error",
+            "meta": {
+                "error_type": type(e).__name__,
+                "error_message": str(e)
+            }
+        })
         raise HTTPException(status_code=500, detail="Internal server error")
 
 # Optional: Add additional routes for quote history, etc.
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    logger.info("Health check", extra={
+        "route": "/health",
+        "event": "health_check",
+        "meta": {
+            "status": "healthy"
+        }
+    })
     return {"status": "healthy", "api_version": "1.0.0"}
 
 # Run with uvicorn
 if __name__ == "__main__":
     import uvicorn
+    logger.info("Starting API server", extra={
+        "event": "server_start",
+        "meta": {
+            "host": "0.0.0.0",
+            "port": 8000
+        }
+    })
     uvicorn.run("submit_quote:app", host="0.0.0.0", port=8000, reload=True) 

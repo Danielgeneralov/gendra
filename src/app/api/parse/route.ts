@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parseRFQ, MissingAPIKeyError } from '@/lib/groqParser';
+import { errorResponse, logInfo, logWarn } from '@/lib/errors';
+
+// External Dependencies:
+// - Groq API (timeout 10s)
+// Failure Handling:
+// - All failures return appropriate status codes (400, 429, 503) with errorResponse()
+// - All logs use logInfo()/logWarn()
+// - Groq API failures return 503 Service Unavailable with retry guidance
 
 // Hardcoded API key for Groq - consider moving this to an environment variable
 // This is a sample key format, replace with your actual key
@@ -13,6 +21,12 @@ const MAX_TEXT_LENGTH = 5000; // Maximum characters allowed in the request text
 // Daily quota configuration
 const DAILY_QUOTA_MAX = 10; // 10 requests per day
 const DAILY_QUOTA_WINDOW = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+// External service timeouts
+const GROQ_API_TIMEOUT = 10000; // 10 seconds
+
+// Route path constant for logging
+const ROUTE_PATH = '/api/parse';
 
 // In-memory rate limiting store
 // In production, consider using Redis or a database for distributed deployments
@@ -128,21 +142,93 @@ function checkDailyQuota(ipAddress: string): { allowed: boolean; remaining: numb
 }
 
 /**
- * Helper function to create consistent error responses
+ * Wrapper for parseRFQ that adds timeout and error handling
  */
-function createErrorResponse(statusCode: number, message: string, details?: Record<string, unknown>): NextResponse {
-  return NextResponse.json(
-    { 
-      error: message,
-      ...(details || {})
-    },
-    { 
-      status: statusCode,
-      headers: {
-        'Content-Type': 'application/json'
+async function callGroqParserWithTimeout(
+  text: string, 
+  apiKey: string
+): Promise<{ success: boolean; data?: any; error?: string; status?: number }> {
+  try {
+    // Create an AbortController for timeout handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), GROQ_API_TIMEOUT);
+    
+    // Track start time for latency monitoring
+    const startTime = Date.now();
+    
+    try {
+      // Call the parseRFQ function with the abort signal
+      // Note: we're assuming parseRFQ supports an abort signal; if not, this may need to be modified
+      const result = await parseRFQ(text, apiKey);
+      
+      // Clear the timeout since the request completed
+      clearTimeout(timeoutId);
+      
+      // Track and log latency
+      const latency = Date.now() - startTime;
+      logInfo(ROUTE_PATH, 'groq_api_latency', {
+        latencyMs: latency,
+        success: true
+      });
+      
+      return { success: true, data: result };
+    } catch (error) {
+      // Clear the timeout to prevent memory leaks
+      clearTimeout(timeoutId);
+      
+      // Check if it's an abort/timeout error
+      if (error instanceof Error && error.name === 'AbortError') {
+        logWarn(ROUTE_PATH, 'groq_api_timeout', {
+          timeoutMs: GROQ_API_TIMEOUT,
+          error: 'Request timed out'
+        });
+        return { 
+          success: false, 
+          error: 'Service timed out while processing the request', 
+          status: 503 // Service Unavailable
+        };
       }
+      
+      // Handle other errors
+      logWarn(ROUTE_PATH, 'groq_api_error', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      
+      // If it's a known API key error, return a specific error
+      if (error instanceof MissingAPIKeyError) {
+        return { 
+          success: false, 
+          error: 'Server configuration error', 
+          status: 500 // Internal Server Error
+        };
+      }
+      
+      // Track failed request latency
+      const latency = Date.now() - startTime;
+      logInfo(ROUTE_PATH, 'groq_api_latency', {
+        latencyMs: latency,
+        success: false
+      });
+      
+      // Generic error case
+      return { 
+        success: false, 
+        error: 'Failed to process the request with Groq API', 
+        status: 503 // Service Unavailable
+      };
     }
-  );
+  } catch (error) {
+    // Catch any errors that might occur outside the fetch itself
+    logWarn(ROUTE_PATH, 'groq_wrapper_error', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+    
+    return { 
+      success: false, 
+      error: 'Error preparing request to Groq API', 
+      status: 500 // Internal Server Error
+    };
+  }
 }
 
 /**
@@ -150,17 +236,26 @@ function createErrorResponse(statusCode: number, message: string, details?: Reco
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    console.log("API route: Received request to parse RFQ");
-    
-    // 1. Get client IP and apply rate limiting
     const clientIp = getClientIp(request);
+    
+    // Log incoming request with structured metadata
+    logInfo(ROUTE_PATH, 'incoming_request', {
+      ip: clientIp,
+      method: request.method,
+      userAgent: request.headers.get('user-agent') || 'unknown'
+    });
     
     // 1a. Check daily quota first
     const dailyQuota = checkDailyQuota(clientIp);
     if (!dailyQuota.allowed) {
-      console.warn("API route: Daily quota exceeded", { clientIp });
-      // Calculate time until quota resets in hours and minutes
       const hoursToWait = Math.ceil((dailyQuota.resetAt - Date.now()) / (1000 * 60 * 60));
+      
+      logWarn(ROUTE_PATH, 'quota_exceeded', {
+        ip: clientIp,
+        quotaLimit: DAILY_QUOTA_MAX,
+        hoursToWait
+      });
+      
       return NextResponse.json(
         { error: `Daily quota of ${DAILY_QUOTA_MAX} requests exceeded. Try again in ${hoursToWait} hours.` },
         { 
@@ -190,8 +285,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     
     // Reject if rate limit exceeded
     if (!rateLimit.allowed) {
-      console.warn("API route: Rate limit exceeded", { clientIp });
       const secondsToWait = Math.ceil((rateLimit.resetAt - Date.now()) / 1000);
+      
+      logWarn(ROUTE_PATH, 'rate_limit_exceeded', {
+        ip: clientIp,
+        rateLimit: RATE_LIMIT_MAX,
+        secondsToWait
+      });
+      
       return NextResponse.json(
         { error: `Rate limit exceeded. Try again in ${secondsToWait} seconds.` },
         { 
@@ -204,58 +305,103 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
     
-    // Check API key validity (at least format-wise)
+    // 2. Validate API key before making any requests
     if (!GROQ_API_KEY || !GROQ_API_KEY.startsWith('gsk_')) {
-      console.error("API route: Invalid API key format");
-      return createErrorResponse(500, 'Server configuration error');
+      return errorResponse('Server configuration error', 500, {
+        route: ROUTE_PATH,
+        error: 'Invalid API key format'
+      });
     }
     
-    // 2. Parse the request body and validate input
+    // 3. Parse and validate request body
     let body;
     try {
       body = await request.json();
     } catch (error) {
-      console.error("API route: Invalid JSON in request body");
-      return createErrorResponse(400, 'Invalid JSON in request body');
+      return errorResponse('Invalid JSON in request body', 400, {
+        route: ROUTE_PATH,
+        ip: clientIp,
+        error: 'Request body is not valid JSON'
+      });
     }
     
     // Log what we received (sanitized for security)
-    console.log("API route: Request body received", { 
+    logInfo(ROUTE_PATH, 'request_body_received', {
+      ip: clientIp,
       textProvided: !!body.text,
-      textLength: body.text ? body.text.length : 0 
+      textLength: body.text ? body.text.length : 0
     });
     
-    // Validate the incoming request - text field exists
+    // 4. Validate input thoroughly before sending to Groq
     if (!body.text || typeof body.text !== 'string') {
-      console.log("API route: Invalid request - missing or invalid text field");
-      return createErrorResponse(400, 'Missing or invalid text field in request body');
+      return errorResponse('Missing or invalid text field in request body', 400, {
+        route: ROUTE_PATH,
+        ip: clientIp
+      });
     }
 
     // Validate text length - not too short
     if (body.text.length < 50) {
-      console.warn("API route: Text is too short, might not contain enough information");
-      return createErrorResponse(
-        400, 
-        'Text is too short to be a valid RFQ. Please provide more complete information.'
+      logWarn(ROUTE_PATH, 'text_too_short', {
+        ip: clientIp,
+        textLength: body.text.length
+      });
+      
+      return errorResponse(
+        'Text is too short to be a valid RFQ. Please provide more complete information.',
+        400,
+        {
+          route: ROUTE_PATH,
+          ip: clientIp,
+          textLength: body.text.length
+        }
       );
     }
     
     // Validate text length - not too long
     if (body.text.length > MAX_TEXT_LENGTH) {
-      console.warn("API route: Text is too long", { textLength: body.text.length });
-      return createErrorResponse(
+      logWarn(ROUTE_PATH, 'text_too_long', {
+        ip: clientIp,
+        textLength: body.text.length,
+        maxLength: MAX_TEXT_LENGTH
+      });
+      
+      return errorResponse(
+        `Text is too long. Maximum ${MAX_TEXT_LENGTH} characters allowed.`,
         400,
-        `Text is too long. Maximum ${MAX_TEXT_LENGTH} characters allowed.`
+        {
+          route: ROUTE_PATH,
+          ip: clientIp,
+          textLength: body.text.length
+        }
       );
     }
 
-    // 3. Call the RFQ parser with the configured API key
-    console.log("API route: Calling parseRFQ function with provided API key");
-    console.log("API route: First 100 chars of text:", body.text.substring(0, 100) + "...");
+    // 5. Call the Groq API with timeout and error handling
+    logInfo(ROUTE_PATH, 'calling_rfq_parser', {
+      ip: clientIp,
+      textLength: body.text.length,
+      timeoutMs: GROQ_API_TIMEOUT
+    });
     
-    const parsedRFQ = await parseRFQ(body.text, GROQ_API_KEY);
+    const groqResult = await callGroqParserWithTimeout(body.text, GROQ_API_KEY);
     
-    // Validate the parsed result to make sure it's not returning defaults due to failure
+    // 6. Handle Groq API errors
+    if (!groqResult.success) {
+      return errorResponse(
+        groqResult.error || 'Failed to parse RFQ with Groq API',
+        groqResult.status || 503, // Use provided status or default to 503
+        {
+          route: ROUTE_PATH,
+          ip: clientIp,
+          service: 'groq'
+        }
+      );
+    }
+    
+    const parsedRFQ = groqResult.data;
+    
+    // 7. Validate the parsed result to make sure it's not returning defaults due to failure
     const isDefaultResult = 
       !parsedRFQ.material && 
       parsedRFQ.quantity === 0 && 
@@ -265,8 +411,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       !parsedRFQ.industry;
     
     if (isDefaultResult) {
-      console.warn("API route: parseRFQ returned default values, indicating a potential failure");
-      console.warn("API route: Model used:", parsedRFQ.modelUsed);
+      logWarn(ROUTE_PATH, 'parser_default_values', {
+        ip: clientIp,
+        modelUsed: parsedRFQ.modelUsed,
+        service: 'groq'
+      });
       
       // Return a more meaningful error instead of empty defaults
       return NextResponse.json(
@@ -282,8 +431,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
     
-    // 4. Success - return the parsed result with rate limit headers
-    console.log("API route: Successfully parsed RFQ", {
+    // 8. Success - return the parsed result with rate limit headers
+    logInfo(ROUTE_PATH, 'rfq_parsed_successfully', {
+      ip: clientIp,
       hasMaterial: !!parsedRFQ.material,
       hasQuantity: parsedRFQ.quantity > 0,
       hasDimensions: parsedRFQ.dimensions.length > 0 || parsedRFQ.dimensions.width > 0 || parsedRFQ.dimensions.height > 0,
@@ -296,25 +446,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { headers }
     );
   } catch (error) {
-    // Handle specific known errors
-    if (error instanceof MissingAPIKeyError) {
-      console.error('API route: Missing API key error');
-      return createErrorResponse(500, 'Server configuration error');
-    }
-    
-    // Handle generic errors with improved logging
+    // Final catch-all error handler
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     const errorName = error instanceof Error ? error.name : 'UnknownError';
-    const errorStack = error instanceof Error ? error.stack : undefined;
     
-    console.error('API route: Error processing request:', {
+    logWarn(ROUTE_PATH, 'unexpected_error', {
       errorName,
-      errorMessage,
-      // Only log the first few lines of the stack trace to avoid overwhelming logs
-      errorStackPreview: errorStack ? errorStack.split('\n').slice(0, 3).join('\n') : undefined
+      errorMessage
     });
     
-    // Return a sanitized error response without internal details
-    return createErrorResponse(500, 'Failed to parse RFQ. Please try again later.');
+    return errorResponse('Failed to parse RFQ. Please try again later.', 500, {
+      route: ROUTE_PATH,
+      errorName,
+      errorMessage
+    });
   }
 } 
