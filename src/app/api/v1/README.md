@@ -1,125 +1,86 @@
-# Gendra AI Quote API
+# Gendra API v1 Documentation
 
-This API provides endpoints for submitting and managing quotes for manufacturing services.
+This directory contains the API endpoints for the Gendra quoting platform. The API is structured to follow Next.js 15 App Router conventions and best practices.
 
-## Endpoints
+## API Endpoints
 
-### Submit Quote
+### Quote Calculation
 
-`POST /api/v1/submit-quote`
+- **Endpoint**: `/api/v1/quote-calculate`
+- **Method**: `POST`
+- **Query Parameters**: 
+  - `industryId`: (required) The industry identifier for the quote
+- **Description**: Calculates a quote based on specifications and industry
+- **Responsibilities**: 
+  - Forwards calculation requests to the Python backend
+  - Provides fallback calculation if the backend is unavailable
+  - Returns complete quote data including pricing and lead time
+- **Implementation**: Uses Python backend service for accurate calculations
 
-Submits a new quote request and saves it to the Supabase `quote_leads` table.
+### Industry Configuration 
 
-#### Request Body
+- **Endpoint**: `/api/v1/quote-config/[industryId]`
+- **Method**: `GET`
+- **URL Parameters**:
+  - `industryId`: The industry identifier
+- **Description**: Returns static pricing configuration data for a specific industry
+- **Responsibilities**:
+  - Provides pricing factors, material costs, and complexity levels
+  - Does NOT perform quote calculations
+  - Serves configuration data to frontend components
 
-```json
-{
-  "email": "user@example.com",
-  "industry": "metal_fabrication",
-  "material": "Aluminum",
-  "quantity": 100,
-  "complexity": "Medium",
-  "surface_finish": "Powder Coat",
-  "lead_time_preference": "Standard",
-  "custom_fields": {
-    "thickness_mm": 2.0,
-    "width_mm": 50,
-    "height_mm": 30
-  },
-  "full_quote_shown": true
-}
-```
+### Quote Submission
 
-| Field                | Type    | Description                                                |
-|----------------------|---------|------------------------------------------------------------|
-| email                | string  | User's email address (required)                            |
-| industry             | string  | Manufacturing industry category (required)                 |
-| material             | string  | Material type for manufacturing (required)                 |
-| quantity             | integer | Number of parts or units (required, must be positive)      |
-| complexity           | string  | Complexity level (Low, Medium, High)                       |
-| surface_finish       | string  | Surface finish type                                        |
-| lead_time_preference | string  | Desired lead time (Standard, Rush)                         |
-| custom_fields        | object  | Additional industry-specific fields (varies by industry)   |
-| full_quote_shown     | boolean | Whether the user viewed the full quote details             |
+- **Endpoint**: `/api/v1/submit-quote`
+- **Method**: `POST`
+- **Description**: Submits a finalized quote to be stored in the database
+- **Responsibilities**:
+  - Saves quote data to Supabase
+  - Calculates final pricing if needed (using Python backend)
+  - Returns confirmation with quote range and lead time
 
-#### Response
+### Root Endpoint
 
-```json
-{
-  "success": true,
-  "message": "Quote submitted successfully",
-  "quote_range": {
-    "minAmount": 1350,
-    "maxAmount": 1650
-  },
-  "lead_time_estimate": "10-14 business days"
-}
-```
+- **Endpoint**: `/api/v1`
+- **Method**: `GET`
+- **Query Parameters**: 
+  - `industryId`: (optional) If provided, redirects to industry configuration
+- **Description**: Returns API documentation and available industries
+- **Responsibilities**:
+  - Provides API documentation and available endpoints
+  - Redirects to industry configuration if industryId is provided
 
-| Field              | Type    | Description                                 |
-|--------------------|---------|---------------------------------------------|
-| success            | boolean | Indicates if the request was successful     |
-| message            | string  | Human-readable status message               |
-| quote_range        | object  | Min and max quote amount                    |
-| lead_time_estimate | string  | Estimated production time                   |
+## Troubleshooting
 
-### Health Check
+### Route Conflicts
 
-`GET /api/v1/health`
+If you encounter route conflicts:
 
-Checks the API's operational status.
+1. Ensure each route has distinct responsibilities
+2. Avoid mixing dynamic and static routes with similar patterns
+3. Use clear naming conventions for all endpoints
+4. Don't use context parameters (`context: { params }`) in POST handlers
 
-#### Response
+### Calculation Backend
 
-```json
-{
-  "status": "healthy",
-  "api_version": "1.0.0"
-}
-```
+The quote calculation system:
+
+1. Primarily uses the Python backend API (`http://localhost:8000/calculate-quote`)
+2. Falls back to simplified JS calculation if backend is unavailable
+3. Tracks which method was used via the `calculatedBy` field
+
+### Quote Flow
+
+The typical quote flow is:
+
+1. Frontend calls `/api/v1/quote-calculate` with specifications
+2. Next.js API forwards the request to Python backend
+3. Result is returned to frontend for display
+4. When customer submits email, `/api/v1/submit-quote` is called to save the quote
 
 ## Error Handling
 
 All API endpoints return appropriate HTTP status codes:
 
 - `200 OK`: Request succeeded
-- `400 Bad Request`: Missing or invalid parameters
-- `500 Internal Server Error`: Server-side error
-
-Error responses include an `error` field with a description of what went wrong:
-
-```json
-{
-  "error": "Missing required fields"
-}
-```
-
-## Environment Variables
-
-The API requires the following environment variables:
-
-- `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
-- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key for database access
-
-## Database Schema
-
-The API stores quote leads in the `quote_leads` table with the following schema:
-
-| Column               | Type                    | Description                           |
-|----------------------|-------------------------|---------------------------------------|
-| id                   | uuid                    | Primary key                           |
-| email                | text                    | User's email address                  |
-| industry             | text                    | Industry category                     |
-| material             | text                    | Material type                         |
-| quantity             | integer                 | Quantity of parts                     |
-| complexity           | text                    | Complexity level                      |
-| surface_finish       | text                    | Surface finish type                   |
-| lead_time_preference | text                    | Desired lead time                     |
-| custom_fields        | jsonb                   | Industry-specific fields              |
-| full_quote_shown     | boolean                 | Whether full quote was shown          |
-| quote_amount         | numeric                 | Calculated quote amount               |
-| created_at           | timestamp with timezone | Creation timestamp                    |
-| is_contacted         | boolean                 | Whether follow-up contact was made    |
-| notes                | text                    | Additional notes                      |
-
-Run the SQL migration in `src/app/supabase/migrations/update_quote_leads.sql` to update your database schema. 
+- `

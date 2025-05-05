@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { calculateFallbackQuote } from '@/lib/fallbackQuote';
 
 // Force dynamic to help with route handlers
 export const dynamic = 'force-dynamic';
 
+/**
+ * Load industry-specific configuration file if available
+ * This is used to enrich the request with industry-specific configurations
+ */
 async function loadIndustryConfig(industryId: string) {
   try {
     const configModule = await import(`@/app/models/industries/${industryId}.json`);
@@ -13,6 +18,11 @@ async function loadIndustryConfig(industryId: string) {
   }
 }
 
+/**
+ * POST handler for quote calculations
+ * Forwards the calculation request to the Python backend service
+ * Falls back to simple calculation if the backend is unavailable
+ */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Get industryId from search params
@@ -25,71 +35,68 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
     
-    const requestData: Record<string, unknown> = await request.json();
+    // Parse request data
+    const requestData = await request.json();
     
+    // Try to load industry-specific configuration
     const config = await loadIndustryConfig(industryId);
 
-    let basePrice = 100;
-    let complexityFactor = 1.0;
-    let materialCost = 50;
-    let quantityDiscount = 0;
-    let complexity = "Medium";
-
-    if (config) {
-      basePrice = config.basePriceCoefficient || 100;
-
-      interface FormField {
-        id: string;
-        options?: Array<{
-          value: string;
-          label?: string;
-          factor?: number;
-          costFactor?: number;
-        }>;
+    // Prepare data for backend calculation
+    const calculationData = {
+      industryId,
+      ...requestData,
+      // Add any industry-specific config data that might be useful
+      industryConfig: config ? {
+        basePrice: config.basePriceCoefficient,
+        formFields: config.formFields
+      } : undefined
+    };
+    
+    try {
+      // Send to Python backend for calculation
+      // Use a timeout to avoid hanging if backend is unresponsive
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      const backendResponse = await fetch('http://localhost:8000/calculate-quote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(calculationData),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!backendResponse.ok) {
+        throw new Error(`Backend service responded with status: ${backendResponse.status}`);
       }
-
-      const complexityField = config.formFields?.find((f: FormField) => f.id === 'complexity');
-      const complexityOption = complexityField?.options?.find(
-        (o: { value: string }) => o.value === requestData.complexity
-      );
-      if (complexityOption) {
-        complexityFactor = complexityOption.factor || 1.0;
-        complexity = complexityOption.label || "Medium";
-      }
-
-      const materialField = config.formFields?.find((f: FormField) => f.id === 'material');
-      const materialOption = materialField?.options?.find(
-        (o: { value: string }) => o.value === requestData.material
-      );
-      if (materialOption) {
-        materialCost = basePrice * (materialOption.costFactor || 1.0);
-      }
+      
+      const result = await backendResponse.json();
+      
+      // Add a flag to indicate this was calculated by the backend service
+      result.calculatedBy = "backend";
+      
+      return NextResponse.json(result);
+      
+    } catch (backendError) {
+      // Log the backend error
+      console.error("Backend calculation error:", backendError);
+      console.warn("Falling back to local calculation");
+      
+      // Use the centralized fallback calculation utility
+      const fallbackResult = await calculateFallbackQuote({
+        industryId,
+        material: requestData.material,
+        quantity: requestData.quantity,
+        complexity: requestData.complexity,
+        dimensions: requestData.dimensions
+      });
+      
+      // Return result
+      return NextResponse.json(fallbackResult);
     }
-
-    // Use Number() for better parsing of strings to numbers
-    const quantity = Number(requestData.quantity) || 1;
-    if (quantity > 100) quantityDiscount = 0.15;
-    else if (quantity > 50) quantityDiscount = 0.10;
-    else if (quantity > 20) quantityDiscount = 0.05;
-
-    let quote = basePrice + materialCost;
-    quote *= complexityFactor;
-    quote *= quantity;
-    quote *= (1 - quantityDiscount);
-
-    let leadTimeDays = 7;
-    if (complexityFactor > 1.3) leadTimeDays += 7;
-    if (quantity > 50) leadTimeDays += 5;
-
-    return NextResponse.json({
-      quote: Math.round(quote * 100) / 100,
-      leadTime: `${leadTimeDays} days`,
-      complexity,
-      basePrice,
-      materialCost,
-      complexityFactor,
-      quantityDiscount
-    });
   } catch (_error) {
     console.error("API POST error:", _error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

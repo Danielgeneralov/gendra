@@ -60,10 +60,16 @@ export const QuoteCalculator = ({
       });
 
       if (!response.ok) {
-        throw new Error(`Error calculating quote: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(`Error calculating quote: ${errorData.error || response.status}`);
       }
 
       const data = await response.json();
+      
+      if (data.calculatedBy === "fallback" && data.warning) {
+        console.warn("Quote was calculated using fallback method:", data.warning);
+      }
+      
       setQuoteResult(data);
     } catch (err) {
       console.error("Failed to calculate quote:", err);
