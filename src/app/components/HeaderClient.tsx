@@ -78,24 +78,61 @@ export function HeaderClient() {
                   <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                     <Link 
                       href="/quote" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="block px-4 py-3 text-sm font-bold text-gray-900 bg-gray-50 hover:bg-gray-100 border-l-4 border-blue-500"
                       onClick={() => setIsQuoteDropdownOpen(false)}
                     >
-                      All Industries
+                      <div className="flex items-center">
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          className="h-4 w-4 mr-2 text-blue-500" 
+                          fill="none" 
+                          viewBox="0 0 24 24" 
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        AI Quote Parser
+                      </div>
                     </Link>
+                    
+                    <div className="mt-2 pt-2 pb-1 border-t border-gray-200">
+                      <p className="px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Industries</p>
+                    </div>
+                    
                     <Link 
-                      href="/quote?industry=metal_fabrication" 
+                      href="/quote/metal-fabrication" 
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       onClick={() => setIsQuoteDropdownOpen(false)}
                     >
                       Metal Fabrication
                     </Link>
                     <Link 
-                      href="/quote?industry=injection_molding" 
+                      href="/quote/injection-molding" 
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       onClick={() => setIsQuoteDropdownOpen(false)}
                     >
                       Injection Molding
+                    </Link>
+                    <Link 
+                      href="/quote/cnc-machining" 
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsQuoteDropdownOpen(false)}
+                    >
+                      CNC Machining
+                    </Link>
+                    <Link 
+                      href="/quote/sheet-metal" 
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsQuoteDropdownOpen(false)}
+                    >
+                      Sheet Metal
+                    </Link>
+                    <Link 
+                      href="/quote/electronics-assembly" 
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsQuoteDropdownOpen(false)}
+                    >
+                      Electronics Assembly
                     </Link>
                   </div>
                 )}
