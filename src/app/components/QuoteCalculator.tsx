@@ -51,7 +51,7 @@ export const QuoteCalculator = ({
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/v1/quote/${industryId}`, {
+      const response = await fetch(`/api/v1/quote-calculate?industryId=${industryId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
