@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+// Force dynamic to ensure latest data
+export const dynamic = 'force-dynamic';
+
 // Quote request schema
 interface QuoteRequest {
   email: string;
@@ -49,7 +52,7 @@ const calculateQuote = (
   };
 };
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error("Supabase environment variables are missing.");
@@ -98,8 +101,8 @@ export async function POST(request: NextRequest) {
           ? "5–7 business days"
           : "10–14 business days"
     });
-  } catch (error) {
-    console.error("Error processing quote submission:", error);
+  } catch (_error) {
+    console.error("Error processing quote submission:", _error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

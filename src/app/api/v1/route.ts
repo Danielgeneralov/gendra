@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Force dynamic to help with route handlers
+export const dynamic = 'force-dynamic';
+
 async function loadIndustryConfig(industryId: string) {
   try {
     const configModule = await import(`@/app/models/industries/${industryId}.json`);
@@ -10,12 +13,12 @@ async function loadIndustryConfig(industryId: string) {
   }
 }
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params?: { industryId?: string } }
-) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    if (!params?.industryId) {
+    // Get industryId from search params instead of path params
+    const industryId = request.nextUrl.searchParams.get('industryId');
+
+    if (!industryId) {
       return NextResponse.json({
         industries: [
           {
@@ -34,7 +37,6 @@ export async function GET(
       });
     }
 
-    const industryId = params.industryId;
     const config = await loadIndustryConfig(industryId);
 
     if (!config) {
@@ -45,18 +47,24 @@ export async function GET(
     }
 
     return NextResponse.json(config);
-  } catch (error) {
-    console.error("API GET error:", error);
+  } catch (_error) {
+    console.error("API GET error:", _error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { industryId: string } }
-) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const { industryId } = params;
+    // Get industryId from search params instead of path params
+    const industryId = request.nextUrl.searchParams.get('industryId');
+    
+    if (!industryId) {
+      return NextResponse.json(
+        { error: "Missing required 'industryId' parameter" },
+        { status: 400 }
+      );
+    }
+    
     const requestData: Record<string, unknown> = await request.json();
     
     const config = await loadIndustryConfig(industryId);
@@ -98,7 +106,8 @@ export async function POST(
       }
     }
 
-    const quantity = parseInt(requestData.quantity as string) || 1;
+    // Use Number() for better parsing of strings to numbers
+    const quantity = Number(requestData.quantity) || 1;
     if (quantity > 100) quantityDiscount = 0.15;
     else if (quantity > 50) quantityDiscount = 0.10;
     else if (quantity > 20) quantityDiscount = 0.05;
@@ -121,8 +130,8 @@ export async function POST(
       complexityFactor,
       quantityDiscount
     });
-  } catch (error) {
-    console.error("API POST error:", error);
+  } catch (_error) {
+    console.error("API POST error:", _error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

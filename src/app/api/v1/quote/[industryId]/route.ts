@@ -76,17 +76,19 @@ interface QuoteFormData {
   [key: string]: unknown;
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { industryId: string } }
+): Promise<NextResponse> {
   try {
-    const url = request.nextUrl;
-    const industryId = url.pathname.split("/").pop()?.toLowerCase() || "default";
+    const { industryId } = params;
 
     const formData: QuoteFormData = await request.json();
 
-    const material = (formData.material as string)?.toLowerCase?.() || "default";
+    const material = (formData.material as string)?.toLowerCase() || "default";
     const quantity = Number(formData.quantity) || 1;
     const complexity =
-      (formData.complexity as string)?.toLowerCase?.() || "medium";
+      (formData.complexity as string)?.toLowerCase() || "medium";
 
     const dimensions = formData.dimensions || {};
     const length = Number(dimensions.length) || 10;
@@ -123,8 +125,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       leadTime,
       complexity: complexityLevels[complexity]?.name || "Medium",
     });
-  } catch (error) {
-    console.error("Error calculating quote:", error);
+  } catch (_error) {
+    console.error("Error calculating quote:", _error);
     return NextResponse.json(
       { error: "Failed to calculate quote" },
       { status: 500 }
