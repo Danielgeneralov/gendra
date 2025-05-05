@@ -1,45 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getIndustryConfig, getFrontendConfig } from "@/lib/industryRegistry";
 
 export const dynamic = "force-dynamic";
-
-// Define the complex types we need
-type ComplexityLevel = { factor: number; name: string; };
-type MaterialCosts = Record<string, number>;
-type IndustryPricing = Record<string, number>;
-
-const complexityLevels: Record<string, ComplexityLevel> = {
-  low: { factor: 1.0, name: "Low" },
-  medium: { factor: 1.5, name: "Medium" },
-  high: { factor: 2.0, name: "High" },
-};
-
-const materialCosts: MaterialCosts = {
-  steel: 2.5,
-  aluminum: 3.2,
-  plastic: 1.8,
-  titanium: 15.0,
-  brass: 6.0,
-  copper: 7.2,
-  "stainless-steel": 5.5,
-  "carbon-fiber": 25.0,
-  wood: 1.2,
-  glass: 4.0,
-  concrete: 0.8,
-  ceramic: 8.5,
-  rubber: 3.0,
-  default: 5.0,
-};
-
-const industryBasePricing: IndustryPricing = {
-  automotive: 500,
-  aerospace: 1200,
-  medical: 900,
-  "consumer-electronics": 300,
-  "industrial-equipment": 650,
-  construction: 400,
-  energy: 800,
-  default: 500,
-};
 
 /**
  * GET handler for industry-specific pricing information and configuration data
@@ -60,24 +22,30 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       );
     }
     
-    // Return industry-specific pricing information and constants
-    // This can be used by the frontend to initialize and validate quote calculations
+    // Get the industry configuration from the registry
+    const industryConfig = getIndustryConfig(industryId);
+    
+    if (!industryConfig) {
+      return NextResponse.json(
+        { error: `Industry '${industryId}' not found` },
+        { status: 404 }
+      );
+    }
+    
+    // By default, return the frontend-safe version of the config
+    // This filters out any fields marked as backendOnly
+    const config = getFrontendConfig(industryConfig);
+    
+    // Determine if this is a backend request (can include a special header)
+    const isBackendRequest = request.headers.get('x-api-source') === 'backend';
+    
+    // Return full config for backend requests, frontend config for frontend requests
     return NextResponse.json({
-      industry: industryId,
-      basePrice: industryBasePricing[industryId] || industryBasePricing.default,
-      materialCosts: Object.keys(materialCosts).map(material => ({
-        id: material,
-        name: material.charAt(0).toUpperCase() + material.slice(1).replace('-', ' '),
-        rate: materialCosts[material] || materialCosts.default
-      })),
-      complexityLevels: Object.keys(complexityLevels).map(key => ({
-        id: key,
-        ...complexityLevels[key]
-      })),
+      ...config,
       message: "Use the /api/v1/quote-calculate endpoint with POST for actual quote calculations"
     });
-  } catch (_error) {
-    console.error("Error retrieving industry pricing data:", _error);
+  } catch (error) {
+    console.error("Error retrieving industry pricing data:", error);
     return NextResponse.json(
       { error: "Failed to retrieve industry pricing data" },
       { status: 500 }
