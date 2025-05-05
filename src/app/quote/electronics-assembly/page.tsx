@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 type FormData = {
   assemblyType: string;
@@ -15,7 +16,15 @@ type FormData = {
   deadline: string;
 };
 
+// Configure the API endpoint 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const QUOTE_ENDPOINT = `${API_BASE_URL}/predict-quote`;
+const HEALTH_ENDPOINT = `${API_BASE_URL}/`;
+
 export default function ElectronicsAssemblyPage() {
+  const searchParams = useSearchParams();
+  const isPrefill = searchParams.get('prefill') === 'true';
+  
   const [formData, setFormData] = useState<FormData>({
     assemblyType: 'pcba',
     quantity: 10,
@@ -33,6 +42,76 @@ export default function ElectronicsAssemblyPage() {
   const [quoteAmount, setQuoteAmount] = useState(0);
   const [leadTime, setLeadTime] = useState('');
   const [unitPrice, setUnitPrice] = useState(0);
+  const [loading, setLoading] = useState(isPrefill);
+  const [calculatingQuote, setCalculatingQuote] = useState(false);
+  const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
+  const [quoteError, setQuoteError] = useState<string | null>(null);
+
+  // Check if backend API is available
+  useEffect(() => {
+    const checkBackendStatus = async () => {
+      try {
+        const response = await fetch(HEALTH_ENDPOINT, {
+          method: 'GET',
+          cache: 'no-cache',
+          headers: { 'Accept': 'application/json' },
+          signal: AbortSignal.timeout(2000)
+        });
+        
+        if (response.ok) {
+          console.log('Backend API is available');
+          setBackendStatus('online');
+        } else {
+          console.warn('Backend API returned error status:', response.status);
+          setBackendStatus('offline');
+        }
+      } catch (error) {
+        console.error('Backend API check failed:', error);
+        setBackendStatus('offline');
+      }
+    };
+    
+    checkBackendStatus();
+  }, []);
+
+  // Fetch parsed RFQ data if prefill is requested
+  useEffect(() => {
+    if (isPrefill) {
+      const fetchLastParsedRFQ = async () => {
+        try {
+          // Here we would normally fetch the data from a storage mechanism
+          // For demonstration, we'll use sessionStorage
+          const storedData = sessionStorage.getItem('lastParsedRFQ');
+          
+          if (storedData) {
+            const parsedData = JSON.parse(storedData);
+            
+            // Map the parsed RFQ data to our form fields
+            setFormData(prevState => ({
+              ...prevState,
+              quantity: parsedData.quantity || prevState.quantity,
+              componentCount: parsedData.componentCount || prevState.componentCount,
+              complexity: parsedData.complexity as 'low' | 'medium' | 'high' || prevState.complexity,
+              deadline: parsedData.deadline || prevState.deadline,
+              // Keep defaults for electronics specific fields
+              assemblyType: parsedData.assemblyType || prevState.assemblyType,
+              boardLayers: prevState.boardLayers,
+              hasSMT: prevState.hasSMT,
+              hasTHT: prevState.hasTHT,
+              testingRequired: prevState.testingRequired,
+              turntime: prevState.turntime
+            }));
+          }
+        } catch (error) {
+          console.error("Error prefilling form:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      fetchLastParsedRFQ();
+    }
+  }, [isPrefill]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -51,7 +130,20 @@ export default function ElectronicsAssemblyPage() {
     }
   };
 
-  const calculateQuote = () => {
+  // Function to map frontend complexity to a numerical value for the backend
+  const mapComplexityToValue = (complexity: string): number => {
+    switch (complexity) {
+      case 'low': return 0.5;
+      case 'medium': return 1.0;
+      case 'high': return 1.5;
+      default: return 1.0;
+    }
+  };
+
+  // Perform a fallback calculation if the backend is unavailable
+  const calculateFallbackQuote = (): { amount: number, unitPrice: number, leadTime: string } => {
+    console.log('Performing fallback calculation for electronics assembly');
+    
     // Base cost calculation
     let baseUnitPrice = 50; // Starting point for a PCBA
     
@@ -135,17 +227,141 @@ export default function ElectronicsAssemblyPage() {
     // Testing adds time
     if (formData.testingRequired) baseDays += 2;
     
-    // Set final values
-    setUnitPrice(Math.round(baseUnitPrice * 100) / 100);
-    setQuoteAmount(Math.round(totalPrice * 100) / 100);
-    setLeadTime(`${baseDays} days`);
-    setShowQuote(true);
+    return {
+      amount: Math.round(totalPrice * 100) / 100,
+      unitPrice: Math.round(baseUnitPrice * 100) / 100,
+      leadTime: `${baseDays} days (estimate)`
+    };
+  };
+
+  const calculateQuote = async () => {
+    setCalculatingQuote(true);
+    setQuoteError(null);
+    
+    try {
+      // Get complexity value for backend
+      const complexityValue = mapComplexityToValue(formData.complexity);
+      
+      // Prepare the request body with all relevant parameters
+      const requestBody = {
+        // Essential fields for machine learning model
+        manufacturingProcess: 'electronics-assembly',
+        assemblyType: formData.assemblyType,
+        quantity: formData.quantity,
+        complexity: complexityValue,
+        
+        // Electronics-assembly specific parameters
+        componentCount: formData.componentCount,
+        boardLayers: formData.boardLayers,
+        hasSMT: formData.hasSMT,
+        hasTHT: formData.hasTHT,
+        testingRequired: formData.testingRequired,
+        turntime: formData.turntime,
+        
+        // Optional metadata
+        requestedDeadline: formData.deadline || null
+      };
+      
+      console.log('Sending request to backend:', requestBody);
+      
+      // Call the backend API
+      const response = await fetch(QUOTE_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(requestBody),
+        mode: 'cors',
+        cache: 'no-cache',
+        credentials: 'same-origin',
+        signal: AbortSignal.timeout(5000)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Backend error response:', errorText);
+        throw new Error(`Backend responded with status ${response.status}: ${errorText}`);
+      }
+      
+      const responseData = await response.json();
+      console.log('Backend response:', responseData);
+      
+      // Extract data from the API response
+      setQuoteAmount(responseData.quote);
+      
+      // Set unit price if provided by backend
+      if (responseData.unitPrice !== undefined) {
+        setUnitPrice(responseData.unitPrice);
+      }
+      
+      // Use lead time from API if available, otherwise calculate it
+      if (responseData.leadTime) {
+        setLeadTime(responseData.leadTime);
+      } else {
+        // Lead time calculation
+        let baseDays = 15; // Standard lead time
+        
+        if (formData.turntime === 'expedited') {
+          baseDays = 8;
+        } else if (formData.turntime === 'rush') {
+          baseDays = 4;
+        }
+        
+        // Adjust for complexity and quantity
+        if (formData.complexity === 'high') baseDays += 5;
+        if (formData.quantity > 500) baseDays += 7;
+        else if (formData.quantity > 100) baseDays += 3;
+        
+        // Testing adds time
+        if (formData.testingRequired) baseDays += 2;
+        
+        setLeadTime(`${baseDays} days`);
+      }
+      
+      // Update backend status to online since we had a successful call
+      setBackendStatus('online');
+      setShowQuote(true);
+      
+    } catch (error: any) {
+      console.error('Error fetching quote from backend:', error);
+      setQuoteError(error.message || 'Unknown error occurred');
+      
+      // If backend is definitively offline, use fallback calculation
+      if (backendStatus === 'offline' || error.message?.includes('timeout') || error.message?.includes('network')) {
+        const fallbackResult = calculateFallbackQuote();
+        setQuoteAmount(fallbackResult.amount);
+        setUnitPrice(fallbackResult.unitPrice);
+        setLeadTime(fallbackResult.leadTime);
+        setShowQuote(true);
+        // Set backend status to offline for future requests
+        setBackendStatus('offline');
+      } else {
+        // Show error notification but don't show quote (handle transient API errors)
+        alert(`Error getting quote: ${error.message || 'Unknown error'}\n\nPlease try again.`);
+      }
+    } finally {
+      setCalculatingQuote(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     calculateQuote();
   };
+
+  if (loading) {
+    return (
+      <div className="py-16 px-4 sm:px-6 lg:px-8 min-h-screen bg-gradient-to-b from-black via-[#050C1C] to-[#0A1828]">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-3xl font-bold text-[#F0F4F8] mb-2">Electronics Assembly Quote</h1>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#4A6FA6]"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-16 px-4 sm:px-6 lg:px-8 min-h-screen bg-gradient-to-b from-black via-[#050C1C] to-[#0A1828]">
@@ -228,7 +444,7 @@ export default function ElectronicsAssemblyPage() {
                   name="hasSMT"
                   checked={formData.hasSMT}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-[#24334A] rounded"
+                  className="h-4 w-4 text-[#4A6FA6] focus:ring-[#4A6FA6] border-[#24334A] rounded"
                 />
                 <label htmlFor="hasSMT" className="ml-2 block text-[#E2E8F0] text-sm font-medium">
                   Surface Mount Technology (SMT)
@@ -242,7 +458,7 @@ export default function ElectronicsAssemblyPage() {
                   name="hasTHT"
                   checked={formData.hasTHT}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-[#24334A] rounded"
+                  className="h-4 w-4 text-[#4A6FA6] focus:ring-[#4A6FA6] border-[#24334A] rounded"
                 />
                 <label htmlFor="hasTHT" className="ml-2 block text-[#E2E8F0] text-sm font-medium">
                   Through-Hole Technology (THT)
@@ -256,7 +472,7 @@ export default function ElectronicsAssemblyPage() {
                   name="testingRequired"
                   checked={formData.testingRequired}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-[#24334A] rounded"
+                  className="h-4 w-4 text-[#4A6FA6] focus:ring-[#4A6FA6] border-[#24334A] rounded"
                 />
                 <label htmlFor="testingRequired" className="ml-2 block text-[#E2E8F0] text-sm font-medium">
                   Functional Testing Required
@@ -309,12 +525,45 @@ export default function ElectronicsAssemblyPage() {
               </div>
             </div>
             
-            <div className="mt-8">
+            <div className="mt-8 flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-[#94A3B8]">Backend Status:</span>
+                {backendStatus === 'online' ? (
+                  <span className="text-sm text-green-500 flex items-center gap-1">
+                    <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                    Connected to pricing engine
+                  </span>
+                ) : backendStatus === 'offline' ? (
+                  <span className="text-sm text-red-500 flex items-center gap-1">
+                    <span className="inline-block w-2 h-2 rounded-full bg-red-500"></span>
+                    Using local calculation (backend unavailable)
+                  </span>
+                ) : (
+                  <span className="text-sm text-yellow-500 flex items-center gap-1">
+                    <span className="inline-block w-2 h-2 rounded-full bg-yellow-500"></span>
+                    Checking backend status...
+                  </span>
+                )}
+              </div>
+              
               <button
                 type="submit"
-                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                disabled={calculatingQuote}
+                className={`inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white ${
+                  calculatingQuote ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
               >
-                Calculate Quote
+                {calculatingQuote ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Calculating...
+                  </>
+                ) : (
+                  'Calculate Quote'
+                )}
               </button>
             </div>
           </form>
@@ -323,6 +572,18 @@ export default function ElectronicsAssemblyPage() {
         {showQuote && (
           <div className="bg-[#0A1828]/50 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-[#050C1C] hover:border-[#4A6FA6]/50 transition-all duration-300">
             <h2 className="text-xl font-semibold text-[#4A6FA6] mb-4">Quote Summary</h2>
+            
+            {backendStatus === 'offline' && (
+              <div className="bg-yellow-900/30 border border-yellow-700 text-yellow-200 px-4 py-2 rounded-md mb-4 text-sm">
+                Note: Using estimated pricing due to backend service unavailability. Contact sales for precise quotes.
+              </div>
+            )}
+            
+            {quoteError && (
+              <div className="bg-red-900/30 border border-red-700 text-red-200 px-4 py-2 rounded-md mb-4 text-sm">
+                Error: {quoteError}
+              </div>
+            )}
             
             <div className="bg-[#141F30] p-4 rounded-md mb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
