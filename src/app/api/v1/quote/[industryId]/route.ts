@@ -2,11 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-type ComplexityLevel = {
-  factor: number;
-  name: string;
-};
-
+// -- config objects omitted for brevity, keep as-is --
+type ComplexityLevel = { factor: number; name: string; };
 type MaterialCosts = Record<string, number>;
 type IndustryPricing = Record<string, number>;
 
@@ -79,12 +76,10 @@ interface QuoteFormData {
   [key: string]: unknown;
 }
 
-export async function POST(
-  request: NextRequest,
-  context: { params: { industryId: string } }
-): Promise<NextResponse> {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const { industryId } = context.params;
+    const url = request.nextUrl;
+    const industryId = url.pathname.split("/").pop()?.toLowerCase() || "default";
 
     const formData: QuoteFormData = await request.json();
 
@@ -102,8 +97,7 @@ export async function POST(
     const sizeFactor = Math.max(0.5, Math.min(3, Math.pow(volume / 1000, 0.3)));
 
     const basePrice =
-      industryBasePricing[industryId.toLowerCase()] ||
-      industryBasePricing.default;
+      industryBasePricing[industryId] || industryBasePricing.default;
 
     const materialCostPerUnit =
       materialCosts[material] || materialCosts.default;
