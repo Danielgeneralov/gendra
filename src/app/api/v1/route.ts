@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PYTHON_API_URL } from '@/app/config';
 
 async function loadIndustryConfig(industryId: string) {
   try {
@@ -13,10 +12,10 @@ async function loadIndustryConfig(industryId: string) {
 
 export async function GET(
   _req: NextRequest,
-  context: { params: { industryId?: string } }
+  { params }: { params?: { industryId?: string } }
 ) {
   try {
-    if (!context.params.industryId) {
+    if (!params?.industryId) {
       return NextResponse.json({
         industries: [
           {
@@ -35,7 +34,7 @@ export async function GET(
       });
     }
 
-    const industryId = context.params.industryId;
+    const industryId = params.industryId;
     const config = await loadIndustryConfig(industryId);
 
     if (!config) {
@@ -54,10 +53,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  context: { params: { industryId: string } }
+  { params }: { params: { industryId: string } }
 ) {
   try {
-    const { industryId } = context.params;
+    const { industryId } = params;
     const requestData: Record<string, unknown> = await request.json();
     
     const config = await loadIndustryConfig(industryId);

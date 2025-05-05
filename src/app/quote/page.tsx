@@ -80,7 +80,7 @@ export default function QuotePage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="bg-[#0A1828]/50 backdrop-blur-sm p-8 rounded-xl shadow-xl border border-[#050C1C] hover:border-[#4A6FA6]/50 transition-all duration-300 max-w-4xl mx-auto"
           >
-            <h2 className="text-2xl font-semibold text-[#4A6FA6] mb-4">Upload your RFQ — we'll handle the rest.</h2>
+            <h2 className="text-2xl font-semibold text-[#4A6FA6] mb-4">Upload your RFQ — we&apos;ll handle the rest.</h2>
             <p className="text-[#94A3B8] mb-4">
               Paste or upload your RFQ, and our AI will extract the key details and guide you to the right quoting form for your industry.
             </p>

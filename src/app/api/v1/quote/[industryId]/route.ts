@@ -79,10 +79,10 @@ interface QuoteFormData {
 
 export async function POST(
   request: NextRequest,
-  context: { params: { industryId: string } }
+  { params }: { params: { industryId: string } }
 ): Promise<NextResponse> {
   try {
-    const { industryId } = context.params;
+    const { industryId } = params;
 
     const formData: QuoteFormData = await request.json();
 
