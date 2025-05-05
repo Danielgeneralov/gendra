@@ -82,11 +82,23 @@ export default function CNCMachiningForm() {
           
           if (storedData) {
             const parsedData = JSON.parse(storedData);
-            console.log("Prefilling with parsed RFQ data:", parsedData);
             
-            // Check if we have the "ity" field instead of "complexity" 
-            // (known issue with Groq model response)
-            const complexityValue = parsedData.complexity || parsedData.ity || 'low';
+            // Determine complexity based on information in the parsed document
+            let complexityValue: 'low' | 'medium' | 'high' = 'medium';
+            if (parsedData.complexity) {
+              if (parsedData.complexity === 'low' || 
+                  parsedData.complexity === 'medium' || 
+                  parsedData.complexity === 'high') {
+                complexityValue = parsedData.complexity as 'low' | 'medium' | 'high';
+              }
+            } else if (parsedData.description) {
+              const desc = parsedData.description.toLowerCase();
+              if (desc.includes('complex') || desc.includes('intricate') || desc.includes('difficult')) {
+                complexityValue = 'high';
+              } else if (desc.includes('simple') || desc.includes('basic') || desc.includes('easy')) {
+                complexityValue = 'low';
+              }
+            }
             
             // Map the parsed RFQ data to our form fields
             setFormData(prevState => ({
@@ -114,29 +126,10 @@ export default function CNCMachiningForm() {
                 
               complexity: complexityValue,
               deadline: parsedData.deadline || prevState.deadline,
-              
-              // Determine finish based on RFQ text analysis
-              surfaceFinish: parsedData.material?.toLowerCase().includes('aluminum') && 
-                            (parsedData.finish?.toLowerCase().includes('anodized') || 
-                             parsedData.finish?.toLowerCase().includes('anodize')) 
-                ? 'anodized' 
-                : parsedData.finish?.toLowerCase().includes('polish') 
-                ? 'polished' 
-                : prevState.surfaceFinish,
-                
-              // Determine tolerance based on RFQ text analysis  
-              tolerance: parsedData.tolerance?.toLowerCase().includes('precision') ||
-                        parsedData.tolerance?.toLowerCase().includes('0.05') 
-                ? 'precision'
-                : parsedData.tolerance?.toLowerCase().includes('tight') ||
-                  parsedData.tolerance?.toLowerCase().includes('0.1')
-                ? 'tight'
-                : prevState.tolerance
+              // Keep defaults for tolerance and finish
+              tolerance: prevState.tolerance,
+              surfaceFinish: prevState.surfaceFinish,
             }));
-            
-            console.log("Form data after prefill:", formData);
-          } else {
-            console.log("No stored RFQ data found for prefill");
           }
         } catch (error) {
           console.error("Error prefilling form:", error);
@@ -147,7 +140,7 @@ export default function CNCMachiningForm() {
       
       fetchLastParsedRFQ();
     }
-  }, [isPrefill]);
+  }, [isPrefill, setFormData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -310,12 +303,17 @@ export default function CNCMachiningForm() {
       setBackendStatus('online');
       setShowQuote(true);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching quote from backend:', error);
-      setQuoteError(error.message || 'Unknown error occurred');
+      
+      // Type guard to check if error is an Error object
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setQuoteError(errorMessage);
       
       // If backend is definitively offline, use fallback calculation
-      if (backendStatus === 'offline' || error.message?.includes('timeout') || error.message?.includes('network')) {
+      if (backendStatus === 'offline' || 
+          (error instanceof Error && 
+            (error.message.includes('timeout') || error.message.includes('network')))) {
         const fallbackResult = calculateFallbackQuote();
         setQuoteAmount(fallbackResult.amount);
         setLeadTime(fallbackResult.leadTime);
@@ -324,7 +322,7 @@ export default function CNCMachiningForm() {
         setBackendStatus('offline');
       } else {
         // Show error notification but don't show quote (handle transient API errors)
-        alert(`Error getting quote: ${error.message || 'Unknown error'}\n\nPlease try again.`);
+        alert(`Error getting quote: ${errorMessage}\n\nPlease try again.`);
       }
     } finally {
       setCalculatingQuote(false);

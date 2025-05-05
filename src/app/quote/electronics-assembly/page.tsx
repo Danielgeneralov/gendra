@@ -1,6 +1,9 @@
 import { Suspense } from 'react';
-import { QuoteFormWrapper, ElectronicsAssemblyForm } from '@/components/quotes';
+import { QuoteFormWrapper } from '@/components/quotes';
 import Loading from '@/components/Loading';
+
+// Import the client component directly but use it inside a Suspense boundary
+import ElectronicsAssemblyForm from '@/components/quotes/ElectronicsAssemblyForm';
 
 export default function ElectronicsAssemblyPage() {
   return (

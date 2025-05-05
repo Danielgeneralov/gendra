@@ -1,6 +1,9 @@
 import { Suspense } from 'react';
-import { QuoteFormWrapper, MetalFabricationForm } from '@/components/quotes';
+import { QuoteFormWrapper } from '@/components/quotes';
 import Loading from '@/components/Loading';
+
+// Import the client component directly but use it inside a Suspense boundary
+import MetalFabricationForm from '@/components/quotes/MetalFabricationForm';
 
 export default function MetalFabricationPage() {
   return (

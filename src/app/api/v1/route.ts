@@ -3,18 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 // Force dynamic to help with route handlers
 export const dynamic = 'force-dynamic';
 
-// This function is no longer needed since we're using the quote-config endpoint
-// It's kept for reference but can be removed
-async function loadIndustryConfig(industryId: string) {
-  try {
-    const configModule = await import(`@/app/models/industries/${industryId}.json`);
-    return configModule.default || configModule;
-  } catch (error) {
-    console.error(`Failed to load industry config for ${industryId}:`, error);
-    return null;
-  }
-}
-
 /**
  * Root API handler that provides information about available industries
  * and routes to other endpoints

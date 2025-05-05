@@ -267,12 +267,17 @@ export default function MetalFabricationForm() {
       setBackendStatus('online');
       setShowQuote(true);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching quote from backend:', error);
-      setQuoteError(error.message || 'Unknown error occurred');
+      
+      // Type guard to check if error is an Error object
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setQuoteError(errorMessage);
       
       // If backend is definitively offline, use fallback calculation
-      if (backendStatus === 'offline' || error.message?.includes('timeout') || error.message?.includes('network')) {
+      if (backendStatus === 'offline' || 
+          (error instanceof Error && 
+           (error.message.includes('timeout') || error.message.includes('network')))) {
         const fallbackResult = calculateFallbackQuote();
         setQuoteAmount(fallbackResult.amount);
         setLeadTime(fallbackResult.leadTime);
@@ -281,7 +286,7 @@ export default function MetalFabricationForm() {
         setBackendStatus('offline');
       } else {
         // Show error notification but don't show quote (handle transient API errors)
-        alert(`Error getting quote: ${error.message || 'Unknown error'}\n\nPlease try again.`);
+        alert(`Error getting quote: ${errorMessage}\n\nPlease try again.`);
       }
     } finally {
       setCalculatingQuote(false);
