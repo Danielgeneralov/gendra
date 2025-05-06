@@ -50,7 +50,7 @@ export function HeaderClient() {
     if (!isMobileMenuOpen) return;
     
     let lastScrollY = window.scrollY;
-    let scrollThreshold = 20; // Minimum scroll distance required to close menu
+    const scrollThreshold = 20; // Minimum scroll distance required to close menu
     let isThrottled = false;
     
     const handleScroll = () => {

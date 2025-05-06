@@ -51,8 +51,8 @@ const convertToRangeFormat = (quote: number): { minAmount: number; maxAmount: nu
  * Call the Python backend with timeout and error handling
  */
 async function callPythonBackendWithTimeout(
-  calculationData: Record<string, any>
-): Promise<{ success: boolean; data?: any; error?: string }> {
+  calculationData: Record<string, unknown>
+): Promise<{ success: boolean; data?: unknown; error?: string }> {
   try {
     // Create an AbortController for timeout handling
     const controller = new AbortController();
@@ -90,7 +90,7 @@ async function callPythonBackendWithTimeout(
           // Try to get error details from the response
           const errorBody = await response.text();
           errorDetail = errorBody;
-        } catch (parseError) {
+        } catch (_parseError) {
           errorDetail = 'Could not parse error response';
         }
         
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     let data: QuoteRequest;
     try {
       data = await request.json();
-    } catch (error) {
+    } catch (_error) {
       return errorResponse("Invalid JSON in request body", 400, {
         route: ROUTE_PATH,
         ip: clientIp,
@@ -241,7 +241,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     
     // 6. Handle backend result or fall back to local calculation
     if (backendResult.success && backendResult.data) {
-      quoteAmount = backendResult.data.quote;
+      const typedData = backendResult.data as { quote: number };
+      quoteAmount = typedData.quote;
       calculatedBy = "backend";
       
       logInfo(ROUTE_PATH, 'quote_calculated_by_backend', {
@@ -358,10 +359,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           : "10–14 business days",
       calculation_method: calculatedBy
     });
-  } catch (error) {
+  } catch (_error) {
     // Final catch-all error handler
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    const errorName = error instanceof Error ? error.name : 'UnknownError';
+    const errorMessage = _error instanceof Error ? _error.message : 'Unknown error occurred';
+    const errorName = _error instanceof Error ? _error.name : 'UnknownError';
     
     logWarn(ROUTE_PATH, 'unexpected_error', {
       errorName,

@@ -43,8 +43,8 @@ async function loadIndustryConfig(industryId: string) {
  * Call the Python backend with timeout and error handling
  */
 async function callPythonBackendWithTimeout(
-  calculationData: Record<string, any>
-): Promise<{ success: boolean; data?: any; error?: string; status?: number }> {
+  calculationData: Record<string, unknown>
+): Promise<{ success: boolean; data?: unknown; error?: string; status?: number }> {
   try {
     // Create an AbortController for timeout handling
     const controller = new AbortController();
@@ -82,7 +82,7 @@ async function callPythonBackendWithTimeout(
           // Try to get error details from the response
           const errorBody = await response.text();
           errorDetail = errorBody;
-        } catch (parseError) {
+        } catch (_parseError) {
           errorDetail = 'Could not parse error response';
         }
         
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     let requestData;
     try {
       requestData = await request.json();
-    } catch (error) {
+    } catch (_error) {
       return errorResponse("Invalid JSON in request body", 400, {
         route: ROUTE_PATH,
         ip: clientIp,
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // 7. If successful, return the backend result
     if (backendResult.success && backendResult.data) {
       // Add a flag to indicate this was calculated by the backend service
-      const result = backendResult.data;
+      const result = backendResult.data as Record<string, unknown>;
       result.calculatedBy = "backend";
       
       logInfo(ROUTE_PATH, 'quote_calculated_by_backend', {
@@ -301,12 +301,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
       );
     }
-  } catch (error) {
+  } catch (_error) {
     // Final catch-all error handler
     return errorResponse("Failed to calculate quote. Please try again later.", 500, {
       route: ROUTE_PATH,
-      errorName: error instanceof Error ? error.name : 'UnknownError',
-      errorMessage: error instanceof Error ? error.message : String(error)
+      errorName: _error instanceof Error ? _error.name : 'UnknownError',
+      errorMessage: _error instanceof Error ? _error.message : String(_error)
     });
   }
 } 
