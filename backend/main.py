@@ -9,13 +9,17 @@ import joblib
 import os
 import logging
 from pathlib import Path
+from upload_routes import router as upload_router
+
+app = FastAPI()  # ✅ Define the FastAPI app FIRST
+app.include_router(upload_router)  # ✅ Then register the router
+
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("gendra-backend")
 
-app = FastAPI(title="Gendra Backend API")
 
 # Add CORS middleware
 app.add_middleware(
