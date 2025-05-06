@@ -1,10 +1,11 @@
+from quote_service import quote_model
+import numpy as np
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 import tempfile
 import os
 import pandas as pd
 import pdfplumber
-
 
 router = APIRouter()
 
@@ -25,14 +26,30 @@ async def upload_file(file: UploadFile = File(...)):
             tmp.write(await file.read())
             tmp_path = tmp.name
 
-        # 🔍 Parse file if supported
+        # 🔍 Parse file
         parsed_data = {}
         if tmp_path.endswith((".csv", ".xlsx")):
             parsed_data = parse_spreadsheet(tmp_path)
-            
         elif tmp_path.endswith(".pdf"):
-         parsed_data = parse_pdf(tmp_path)
+            parsed_data = parse_pdf(tmp_path)
 
+        # 💡 Predict quote if all fields are present
+        if all(k in parsed_data for k in ("quantity", "complexity")):
+            features = np.array([[parsed_data["quantity"], parsed_data["complexity"]]])
+            base_quote = quote_model.predict(features)[0]
+
+            material = parsed_data.get("material", "default").lower()
+            multiplier = {
+                'aluminum': 1.0,
+                'steel': 1.2,
+                'plastic': 0.7,
+                'titanium': 3.0,
+                'carbon fiber': 2.5,
+                'default': 1.0
+            }.get(material, 1.0)
+
+            final_quote = round(max(50.0, base_quote * multiplier), 2)
+            parsed_data["quote"] = final_quote
 
         return JSONResponse(
             status_code=200,
@@ -40,12 +57,13 @@ async def upload_file(file: UploadFile = File(...)):
                 "message": "File uploaded successfully",
                 "filename": file.filename,
                 "data": parsed_data,
-                "path": tmp_path  # optional: remove in production
+                "path": tmp_path  # optional for debugging
             }
         )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
 
 def parse_spreadsheet(file_path: str) -> dict:
     try:
@@ -56,7 +74,6 @@ def parse_spreadsheet(file_path: str) -> dict:
         else:
             raise ValueError("Unsupported file type for parsing.")
 
-        # Expect columns like: quantity, material, complexity
         first_row = df.iloc[0]
 
         return {
@@ -76,8 +93,6 @@ def parse_pdf(file_path: str) -> dict:
             for page in pdf.pages:
                 text += page.extract_text() or ""
 
-        # Simple text-based parsing (customize this to match your expected format)
-        # Example expected: "quantity: 100\nmaterial: aluminum\ncomplexity: 1.2"
         lines = text.lower().splitlines()
         data = {
             "quantity": 1,
