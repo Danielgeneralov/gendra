@@ -49,7 +49,30 @@ export function HeaderClient() {
   useEffect(() => {
     if (!isMobileMenuOpen) return;
     
-    const handleScroll = () => closeMobileMenu();
+    let lastScrollY = window.scrollY;
+    let scrollThreshold = 20; // Minimum scroll distance required to close menu
+    let isThrottled = false;
+    
+    const handleScroll = () => {
+      if (isThrottled) return;
+      
+      // Calculate scroll distance
+      const currentScrollY = window.scrollY;
+      const scrollDistance = Math.abs(currentScrollY - lastScrollY);
+      
+      // Only close if scrolled more than threshold
+      if (scrollDistance > scrollThreshold) {
+        closeMobileMenu();
+      }
+      
+      // Throttle for smoother scrolling
+      isThrottled = true;
+      setTimeout(() => {
+        isThrottled = false;
+        lastScrollY = window.scrollY;
+      }, 300); // 300ms throttle delay
+    };
+    
     window.addEventListener('scroll', handleScroll);
     
     return () => window.removeEventListener('scroll', handleScroll);
@@ -201,9 +224,13 @@ export function HeaderClient() {
       {/* Mobile Menu Panel */}
       <div 
         ref={mobileMenuRef}
-        className={`md:hidden fixed inset-y-0 right-0 w-3/4 max-w-xs bg-neutral-900 bg-opacity-95 backdrop-blur-md shadow-xl transform transition-all duration-300 ease-in-out ${
+        className={`md:hidden fixed inset-y-0 right-0 w-3/4 max-w-xs bg-neutral-900 shadow-xl transform transition-all duration-300 ease-in-out ${
           isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
         } z-50`}
+        style={{ 
+          backgroundColor: 'rgba(23, 23, 23, 0.97)',
+          backdropFilter: 'blur(8px)'
+        }}
         aria-hidden={!isMobileMenuOpen}
         role="dialog"
         aria-modal="true"
