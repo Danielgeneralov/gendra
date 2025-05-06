@@ -45,6 +45,16 @@ export function HeaderClient() {
     };
   }, []);
 
+  // Add new effect to close mobile menu on scroll
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    
+    const handleScroll = () => closeMobileMenu();
+    window.addEventListener('scroll', handleScroll);
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isMobileMenuOpen]);
+
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
   };
@@ -191,7 +201,7 @@ export function HeaderClient() {
       {/* Mobile Menu Panel */}
       <div 
         ref={mobileMenuRef}
-        className={`md:hidden fixed inset-y-0 right-0 w-3/4 max-w-xs bg-slate-900/95 backdrop-blur-md shadow-xl transform transition-all duration-300 ease-in-out ${
+        className={`md:hidden fixed inset-y-0 right-0 w-3/4 max-w-xs bg-neutral-900 bg-opacity-95 backdrop-blur-md shadow-xl transform transition-all duration-300 ease-in-out ${
           isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
         } z-50`}
         aria-hidden={!isMobileMenuOpen}
