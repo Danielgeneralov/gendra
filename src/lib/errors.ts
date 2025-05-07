@@ -119,17 +119,24 @@ export class LowConfidenceError extends AppError {
  * 
  * @param error - Error object or message string
  * @param defaultStatus - Default status code if not provided by the error
- * @param component - Component name for logging context
+ * @param component - Component name for logging context or details object
  * @returns Formatted NextResponse with error details
  */
 export function createErrorResponse(
   error: Error | AppError | string,
   defaultStatus = 500,
-  component = 'api'
+  component: string | Record<string, any> = 'api'
 ): NextResponse {
   // Handle string errors
   if (typeof error === 'string') {
-    logger.error(component, error);
+    // Handle the component parameter as either a string or a details object
+    if (typeof component === 'string') {
+      logger.error(component, error);
+    } else {
+      const componentName = component.route || 'api';
+      logger.error(componentName, error, undefined, component);
+    }
+    
     return NextResponse.json(
       { error: { message: error } },
       { status: defaultStatus }
@@ -140,12 +147,25 @@ export function createErrorResponse(
   const statusCode = 'statusCode' in error ? error.statusCode : defaultStatus;
   
   // Log the error with appropriate details
-  logger.error(
-    component,
-    error.message,
-    error,
-    'details' in error ? { details: error.details } : undefined
-  );
+  if (typeof component === 'string') {
+    logger.error(
+      component,
+      error.message,
+      error,
+      'details' in error ? { details: error.details } : undefined
+    );
+  } else {
+    const componentName = component.route || 'api';
+    logger.error(
+      componentName,
+      error.message,
+      error,
+      {
+        ...('details' in error ? { details: error.details } : {}),
+        ...component
+      }
+    );
+  }
   
   // Create the response
   return NextResponse.json(
@@ -165,6 +185,9 @@ export function createErrorResponse(
 
 /**
  * Alias for createErrorResponse for backward compatibility
+ * Supports both parameter patterns:
+ * - errorResponse(message, status, component)
+ * - errorResponse(message, status, detailsObject)
  */
 export const errorResponse = createErrorResponse;
 

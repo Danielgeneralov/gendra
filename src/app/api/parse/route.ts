@@ -307,10 +307,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     
     // 2. Validate API key before making any requests
     if (!GROQ_API_KEY || !GROQ_API_KEY.startsWith('gsk_')) {
-      return errorResponse('Server configuration error', 500, {
-        route: ROUTE_PATH,
-        error: 'Invalid API key format'
-      });
+      return errorResponse('Server configuration error: Invalid API key format', 500, ROUTE_PATH);
     }
     
     // 3. Parse and validate request body
@@ -318,11 +315,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     try {
       body = await request.json();
     } catch (error) {
-      return errorResponse('Invalid JSON in request body', 400, {
-        route: ROUTE_PATH,
-        ip: clientIp,
-        error: 'Request body is not valid JSON'
-      });
+      return errorResponse('Invalid JSON in request body', 400, ROUTE_PATH);
     }
     
     // Log what we received (sanitized for security)
@@ -334,10 +327,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     
     // 4. Validate input thoroughly before sending to Groq
     if (!body.text || typeof body.text !== 'string') {
-      return errorResponse('Missing or invalid text field in request body', 400, {
-        route: ROUTE_PATH,
-        ip: clientIp
-      });
+      return errorResponse('Missing or invalid text field in request body', 400, ROUTE_PATH);
     }
 
     // Validate text length - not too short
@@ -350,11 +340,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return errorResponse(
         'Text is too short to be a valid RFQ. Please provide more complete information.',
         400,
-        {
-          route: ROUTE_PATH,
-          ip: clientIp,
-          textLength: body.text.length
-        }
+        ROUTE_PATH
       );
     }
     
@@ -369,11 +355,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return errorResponse(
         `Text is too long. Maximum ${MAX_TEXT_LENGTH} characters allowed.`,
         400,
-        {
-          route: ROUTE_PATH,
-          ip: clientIp,
-          textLength: body.text.length
-        }
+        ROUTE_PATH
       );
     }
 
@@ -391,11 +373,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return errorResponse(
         groqResult.error || 'Failed to parse RFQ with Groq API',
         groqResult.status || 503, // Use provided status or default to 503
-        {
-          route: ROUTE_PATH,
-          ip: clientIp,
-          service: 'groq'
-        }
+        ROUTE_PATH
       );
     }
     
@@ -455,10 +433,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       errorMessage
     });
     
-    return errorResponse('Failed to parse RFQ. Please try again later.', 500, {
-      route: ROUTE_PATH,
-      errorName,
-      errorMessage
-    });
+    return errorResponse('Failed to parse RFQ. Please try again later.', 500, ROUTE_PATH);
   }
 } 
