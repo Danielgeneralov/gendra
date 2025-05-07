@@ -164,6 +164,11 @@ export function createErrorResponse(
 }
 
 /**
+ * Alias for createErrorResponse for backward compatibility
+ */
+export const errorResponse = createErrorResponse;
+
+/**
  * Creates a success response for API routes
  * 
  * @param data - Response data
