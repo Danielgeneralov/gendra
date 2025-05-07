@@ -185,8 +185,6 @@ You'll need to request or create the following files that aren't tracked in git:
 - `/api/v1/quote/[industryId]` - Get quote for specific industry
 - `/api/v1/submit-quote` - Submit a new quote
 
-## Development Workflow
-
 ### Branch Management and Collaboration
 
 We follow a branch-based workflow to ensure code quality and protect the main branch:

@@ -4,10 +4,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import RFQUploader from "@/components/RFQUploader";
+import RFQParserTabs from "@/components/RFQParserTabs";
 import IndustryCarousel from "@/components/IndustryCarousel";
 import { INDUSTRIES } from "@/lib/industryData";
-import type { ParsedRFQ } from "@/lib/groqParser";
+import type { ParsedRFQ } from "@/types/ParsedRFQ";
 
 // Industry mapping for routing from parser results to slugs
 const INDUSTRY_MAP: Record<string, string> = {
@@ -16,7 +16,11 @@ const INDUSTRY_MAP: Record<string, string> = {
   "cnc machining": "cnc-machining",
   "sheet metal": "sheet-metal",
   "electronics assembly": "electronics-assembly",
-  "3d printing": "3d-printing"
+  // Additional mappings for potential industry matches
+  "printed circuit board": "electronics-assembly",
+  "pcb assembly": "electronics-assembly",
+  "plastic molding": "injection-molding",
+  "machining": "cnc-machining"
 };
 
 export default function QuotePage() {
@@ -56,7 +60,7 @@ export default function QuotePage() {
     } else {
       // No matching industry found
       setParsingFailed(true);
-      setParsingError(`Unknown industry: &quot;${industryToUse}&quot;`);
+      setParsingError(`Unknown industry: "${industryToUse}"`);
     }
   };
 
@@ -82,13 +86,13 @@ export default function QuotePage() {
           >
             <h2 className="text-2xl font-semibold text-[#4A6FA6] mb-4">Upload your RFQ — we&apos;ll handle the rest.</h2>
             <p className="text-[#94A3B8] mb-4">
-              Paste or upload your RFQ, and our AI will extract the key details and guide you to the right quoting form for your industry.
+              Upload a file or paste your RFQ text, and our AI will extract the key details and guide you to the right quoting form for your industry.
             </p>
             <p className="text-sm text-[#94A3B8] mb-6 italic">
               <span className="font-medium">Tip:</span> Make sure your RFQ mentions the industry (e.g. <em>metal fabrication</em>, <em>sheet metal</em>, etc.) so we can route you accurately.
             </p>
             
-            <RFQUploader onParsedRFQ={handleParsedRFQ} />
+            <RFQParserTabs onParsedRFQ={handleParsedRFQ} />
             
             {parsingFailed && (
               <div className="mt-6 p-4 bg-red-900/30 border border-red-800 rounded-md">

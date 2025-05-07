@@ -134,17 +134,16 @@ const industryConfigs = {
   }
 };
 
-// Route handler for GET requests
-export async function GET(request: Request) {
-  // Extract industryId from URL path
-  const path = new URL(request.url).pathname;
-  const industryId = path.split('/').pop() || '';
-  
-  // Check if industry exists
+// Route handler for GET requests using typed context from App Router
+export async function GET(
+  _req: Request,
+  context: { params: { industryId: string } }
+) {
+  const { industryId } = context.params;
+
   if (!industryConfigs[industryId as keyof typeof industryConfigs]) {
     return NextResponse.json({ error: `Industry not found` }, { status: 404 });
   }
-  
-  // Return data
+
   return NextResponse.json(industryConfigs[industryId as keyof typeof industryConfigs]);
-} 
+}

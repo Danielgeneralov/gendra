@@ -1,59 +1,243 @@
+/**
+ * errors.ts
+ * Standardized error handling utilities for the application
+ */
+
 import { NextResponse } from 'next/server';
+import logger from './logger';
 
 /**
- * Returns a standardized JSON error response and logs the event to the server console.
- * Useful for consistent handling in API routes.
- * 
- * @param message - Error message to return to the client
- * @param status - HTTP status code (defaults to 400)
- * @param context - Optional metadata for debugging (IP, industryId, requestId, etc.)
- * @returns NextResponse with consistent error shape
- * 
- * @example
- * return errorResponse("Missing required field", 400, { field: "industryId" });
+ * Base error class for application-specific errors
  */
-export function errorResponse(message: string, status = 400, context?: Record<string, unknown>) {
-  console.error({
-    level: "error",
-    message,
-    status,
-    timestamp: new Date().toISOString(),
-    ...(context || {})
-  });
+export class AppError extends Error {
+  public statusCode: number;
+  public isOperational: boolean;
+  public details?: unknown;
 
-  return NextResponse.json({ error: message }, { status });
+  constructor(message: string, statusCode = 500, details?: unknown, isOperational = true) {
+    super(message);
+    this.name = this.constructor.name;
+    this.statusCode = statusCode;
+    this.isOperational = isOperational;
+    this.details = details;
+    
+    // Capture stack trace
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
 }
 
 /**
- * Logs an informational event with consistent structure.
- * 
- * @param route - API route path
- * @param event - Event name/type (e.g., "incoming_request")
- * @param meta - Additional metadata relevant to the event
+ * Error thrown when validation fails
  */
-export function logInfo(route: string, event: string, meta: Record<string, unknown>) {
+export class ValidationError extends AppError {
+  constructor(message: string, details?: unknown) {
+    super(message, 400, details, true);
+  }
+}
+
+/**
+ * Error thrown when user authentication is required
+ */
+export class AuthenticationError extends AppError {
+  constructor(message = 'Authentication required') {
+    super(message, 401, undefined, true);
+  }
+}
+
+/**
+ * Error thrown when a requested resource is not found
+ */
+export class NotFoundError extends AppError {
+  constructor(resource: string, id?: string | number) {
+    const message = id 
+      ? `${resource} with ID ${id} not found` 
+      : `${resource} not found`;
+    super(message, 404, { resource, id }, true);
+  }
+}
+
+/**
+ * Error thrown when an external service like Groq API fails
+ */
+export class ExternalServiceError extends AppError {
+  constructor(serviceName: string, message: string, details?: unknown) {
+    super(`${serviceName} error: ${message}`, 503, details, true);
+  }
+}
+
+/**
+ * Error thrown when file parsing fails
+ */
+export class FileParsingError extends AppError {
+  public fileType?: string;
+  
+  constructor(message: string, fileType?: string, details?: unknown) {
+    super(`File parsing error: ${message}`, 400, details, true);
+    this.fileType = fileType;
+  }
+}
+
+/**
+ * Error thrown when the Groq API key is missing
+ */
+export class MissingAPIKeyError extends AppError {
+  constructor() {
+    super('API key is missing in environment variables', 500, undefined, true);
+  }
+}
+
+/**
+ * Error thrown when Groq's response cannot be parsed
+ */
+export class GroqParsingError extends AppError {
+  constructor(message: string, details?: unknown) {
+    super(`Failed to parse Groq response: ${message}`, 500, details, true);
+  }
+}
+
+/**
+ * Error thrown when Groq's confidence scores are below threshold
+ */
+export class LowConfidenceError extends AppError {
+  public parsedData: unknown;
+  
+  constructor(message: string, parsedData: unknown, confidenceScores?: Record<string, number>) {
+    super(
+      `Low confidence in parsing results: ${message}`, 
+      400, 
+      { confidenceScores }, 
+      true
+    );
+    this.parsedData = parsedData;
+  }
+}
+
+/**
+ * Creates a consistent error response for API routes
+ * 
+ * @param error - Error object or message string
+ * @param defaultStatus - Default status code if not provided by the error
+ * @param component - Component name for logging context
+ * @returns Formatted NextResponse with error details
+ */
+export function createErrorResponse(
+  error: Error | AppError | string,
+  defaultStatus = 500,
+  component = 'api'
+): NextResponse {
+  // Handle string errors
+  if (typeof error === 'string') {
+    logger.error(component, error);
+    return NextResponse.json(
+      { error: { message: error } },
+      { status: defaultStatus }
+    );
+  }
+
+  // Get status code from AppError or default
+  const statusCode = 'statusCode' in error ? error.statusCode : defaultStatus;
+  
+  // Log the error with appropriate details
+  logger.error(
+    component,
+    error.message,
+    error,
+    'details' in error ? { details: error.details } : undefined
+  );
+  
+  // Create the response
+  return NextResponse.json(
+    {
+      error: {
+        message: error.message,
+        type: error.name,
+        ...(process.env.NODE_ENV !== 'production' && error.stack 
+          ? { stack: error.stack.split('\n') } 
+          : {}),
+        ...('details' in error && error.details ? { details: error.details } : {})
+      }
+    },
+    { status: statusCode }
+  );
+}
+
+/**
+ * Creates a success response for API routes
+ * 
+ * @param data - Response data
+ * @param status - HTTP status code
+ * @param component - Component name for logging context (optional)
+ * @returns Formatted NextResponse with success data
+ */
+export function createSuccessResponse(
+  data: any, 
+  status = 200, 
+  component?: string
+): NextResponse {
+  if (component) {
+    logger.info(component, 'API success response', { status });
+  }
+  
+  return NextResponse.json(data, { status });
+}
+
+/**
+ * Log info level message
+ * 
+ * @param component - The component or route path generating the log
+ * @param event - The event name
+ * @param data - Additional data to log
+ */
+export function logInfo(component: string, event: string, data?: Record<string, any>): void {
   console.info({
-    level: "info",
-    event,
-    route,
     timestamp: new Date().toISOString(),
-    meta
+    level: 'info',
+    component,
+    event,
+    ...data
   });
 }
 
 /**
- * Logs a warning event with consistent structure.
+ * Log warning level message
  * 
- * @param route - API route path
- * @param event - Event name/type
- * @param meta - Additional metadata relevant to the event
+ * @param component - The component or route path generating the log
+ * @param event - The event name
+ * @param data - Additional data to log
  */
-export function logWarn(route: string, event: string, meta: Record<string, unknown>) {
+export function logWarn(component: string, event: string, data?: Record<string, any>): void {
   console.warn({
-    level: "warn",
-    event,
-    route,
     timestamp: new Date().toISOString(),
-    meta
+    level: 'warn',
+    component,
+    event,
+    ...data
+  });
+}
+
+/**
+ * Log error level message
+ * 
+ * @param component - The component or route path generating the log
+ * @param event - The event name
+ * @param error - The error object
+ * @param data - Additional data to log
+ */
+export function logError(
+  component: string, 
+  event: string, 
+  error: Error | string, 
+  data?: Record<string, any>
+): void {
+  console.error({
+    timestamp: new Date().toISOString(),
+    level: 'error',
+    component,
+    event,
+    error: error instanceof Error ? error.message : error,
+    stack: error instanceof Error ? error.stack : undefined,
+    ...data
   });
 } 

@@ -33,11 +33,5 @@ export const INDUSTRIES: Industry[] = [
     name: "Electronics Assembly",
     description: "PCB and electronics manufacturing services",
     icon: "M5 0a.5.5 0 0 1 .5.5V2h1V.5a.5.5 0 0 1 1 0V2h1V.5a.5.5 0 0 1 1 0V2h1V.5a.5.5 0 0 1 1 0V2A2.5 2.5 0 0 1 14 4.5h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14a2.5 2.5 0 0 1-2.5 2.5v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14A2.5 2.5 0 0 1 2 11.5H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2A2.5 2.5 0 0 1 4.5 2V.5A.5.5 0 0 1 5 0zm-.5 3A1.5 1.5 0 0 0 3 4.5v7A1.5 1.5 0 0 0 4.5 13h7a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 11.5 3h-7zM5 6.5A1.5 1.5 0 0 1 6.5 5h3A1.5 1.5 0 0 1 11 6.5v3A1.5 1.5 0 0 1 9.5 11h-3A1.5 1.5 0 0 1 5 9.5v-3z" 
-  },
-  {
-    id: "3d-printing",
-    name: "3D Printing",
-    description: "Additive manufacturing for prototypes and parts",
-    icon: "M6 0H4.5v1h1v.5H4v1h1v.5H4v1h1v.5H4v1h1V6H2v-.5H1V4a1 1 0 0 1 1-1h.5V2H2a2 2 0 0 0-2 2v2.5h1V6h5v-.5h1V3a1 1 0 0 0-1-1h-.5v-.5H6V0zM8 7.5h1v1h-.5v.5h.5v1h-.5v.5h.5v1h-.5v.5H10v-6H8v.5zm-7 0v1h.5v-.5H2v3h-.5V12H4v-2.5H2V11H1v1h2.5v-5H1v.5z"
   }
 ]; 
