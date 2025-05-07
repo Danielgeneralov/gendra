@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { extractTextFromFile, FileParsingError } from '@/lib/fileParser';
-import { parseRFQ, MissingAPIKeyError } from '@/lib/groqParser';
+import { extractTextFromFile } from '@/lib/fileParser';
+import { parseRFQ } from '@/lib/groqParser';
 import { saveParsedRFQ } from '@/lib/db/saveParsedRFQ';
-import { errorResponse, logInfo, logWarn } from '@/lib/errors';
+import { errorResponse, logInfo, logWarn, FileParsingError, MissingAPIKeyError } from '@/lib/errors';
 
 // Constants
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -52,9 +52,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     
     try {
       // Extract text from the file
-      const extractedText = await extractTextFromFile(file);
+      const extractionResult = await extractTextFromFile(file);
       
-      if (!extractedText || extractedText.trim().length === 0) {
+      if (!extractionResult.text || extractionResult.text.trim().length === 0) {
         logWarn(ROUTE_PATH, 'empty_file_content', {
           fileType: file.type,
           fileName: file.name
@@ -64,16 +64,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       
       // Log extracted text length
       logInfo(ROUTE_PATH, 'extracted_text', {
-        length: extractedText.length,
+        length: extractionResult.text.length,
         fileName: file.name
       });
       
       // Parse the extracted text using Groq API
-      const parsedRFQ = await parseRFQ(extractedText);
+      const parsedRFQ = await parseRFQ(extractionResult.text);
       
       // Save to database if parsing was successful
       if (parsedRFQ && parsedRFQ.material) {
-        const saveResult = await saveParsedRFQ(parsedRFQ, extractedText);
+        const saveResult = await saveParsedRFQ(parsedRFQ, extractionResult.text);
         
         if (!saveResult.success) {
           logWarn(ROUTE_PATH, 'db_save_failed', {
