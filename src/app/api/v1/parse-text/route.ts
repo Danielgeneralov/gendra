@@ -10,7 +10,7 @@ import { parseRFQ } from '@/lib/groqClient';
 import { saveParsedRFQ, logParsingError } from '@/lib/db/rfqStorage';
 import { getCurrentUserId } from '@/lib/auth';
 import { NormalizedRFQInput } from '@/types/ParsedRFQ';
-import { createSuccessResponse, createErrorResponse } from '@/lib/errors';
+import { createSuccessResponse, errorResponse } from '@/lib/errors';
 import { MissingAPIKeyError, GroqParsingError, LowConfidenceError } from '@/lib/errors';
 import logger from '@/lib/logger';
 
@@ -19,6 +19,15 @@ const COMPONENT = 'api/v1/parse-text';
 
 // Maximum text length allowed (100KB)
 const MAX_TEXT_LENGTH = 100 * 1024;
+
+// Type for logParsingError - helping TypeScript understand the function signature
+type LogParsingErrorParams = {
+  errorType: string;
+  errorMessage: string;
+  userId: string;
+  textSample: string;
+  metadata?: Record<string, any>;
+};
 
 /**
  * Handles POST requests to parse RFQ text
@@ -38,10 +47,9 @@ export async function POST(request: NextRequest) {
     
     // Validate text is provided
     if (!body.text || typeof body.text !== 'string' || body.text.trim().length < 10) {
-      return createErrorResponse(
+      return errorResponse(
         'Text is required and must be at least 10 characters',
-        400,
-        COMPONENT
+        400
       );
     }
     
@@ -81,7 +89,7 @@ export async function POST(request: NextRequest) {
       );
       
       if (!saveResult.success) {
-        logger.warn(COMPONENT, 'Failed to save parsed RFQ to database', null, {
+        logger.warn(COMPONENT, 'Failed to save parsed RFQ to database', {
           error: saveResult.error?.message
         });
         // Continue anyway since we have the parsed data
@@ -102,9 +110,9 @@ export async function POST(request: NextRequest) {
           errorMessage: error.message,
           userId,
           textSample: text.substring(0, 200)
-        });
+        } as LogParsingErrorParams);
         
-        return createErrorResponse(error, 500, COMPONENT);
+        return errorResponse(error, 500);
       }
       
       if (error instanceof LowConfidenceError) {
@@ -117,7 +125,7 @@ export async function POST(request: NextRequest) {
           metadata: {
             parsedData: error.parsedData
           }
-        });
+        } as LogParsingErrorParams);
         
         // Return the parsed data with a warning
         return createSuccessResponse({
@@ -133,9 +141,9 @@ export async function POST(request: NextRequest) {
           errorMessage: error.message,
           userId,
           textSample: text.substring(0, 200)
-        });
+        } as LogParsingErrorParams);
         
-        return createErrorResponse(error, 400, COMPONENT);
+        return errorResponse(error, 400);
       }
       
       // Generic error handling
@@ -146,21 +154,19 @@ export async function POST(request: NextRequest) {
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
         userId,
         textSample: text.substring(0, 200)
-      });
+      } as LogParsingErrorParams);
       
-      return createErrorResponse(
+      return errorResponse(
         error instanceof Error ? error : 'An unexpected error occurred while parsing the RFQ',
-        500,
-        COMPONENT
+        500
       );
     }
   } catch (error) {
     logger.error(COMPONENT, 'Unhandled error in parse route', error);
     
-    return createErrorResponse(
+    return errorResponse(
       'An unexpected error occurred',
-      500,
-      COMPONENT
+      500
     );
   }
 }

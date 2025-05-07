@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       );
       
       if (!saveResult.success) {
-        logger.warn(COMPONENT, 'Failed to save parsed RFQ to database', null, {
+        logger.warn(COMPONENT, 'Failed to save parsed RFQ to database', {
           error: saveResult.error?.message
         });
         // Continue anyway since we have the parsed data
