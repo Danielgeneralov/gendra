@@ -1,6 +1,9 @@
 fastapi==0.110.0
 uvicorn==0.28.0
 pydantic==2.6.3
-scikit-learn==1.4.0
-numpy==1.26.3
-joblib==1.4.2 
+python-multipart==0.0.9     # for handling file uploads via multipart/form-data
+pandas==2.2.2                # for Excel parsing or CSV logic
+openpyxl==3.1.2              # required by pandas to read .xlsx files
+scikit-learn==1.4.0          # only if your quote logic uses regression/models
+numpy==1.26.3                # required by pandas / sklearn
+joblib==1.4.2                # if you load pre-trained models
