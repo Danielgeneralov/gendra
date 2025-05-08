@@ -1,53 +1,114 @@
-# Quote Form Components Pattern
+# Gendra Manufacturing Quote Forms
 
-This directory contains client components for the various quote forms used throughout the application.
+This directory contains the quote form components for different manufacturing processes supported by Gendra.
 
-## App Router Client Components with `useSearchParams()`
+## Available Quote Forms
 
-When using client-side hooks like `useSearchParams()` or `usePathname()` in Next.js App Router, special care must be taken to avoid SSR bailouts and client/server rendering mismatch errors.
+1. **CNCMachiningForm.tsx** - For CNC machining services
+2. **ElectronicsAssemblyForm.tsx** - For electronics assembly services
+3. **InjectionMoldingForm.tsx** - For injection molding services
+4. **MetalFabricationForm.tsx** - For metal fabrication services
+5. **SheetMetalForm.tsx** - For sheet metal fabrication services
 
-### ✅ The Pattern
+## Adding a New Manufacturing Process Form
 
-1. **Server Component Page**: Keep the page.tsx files as Server Components
-2. **Client Component with `use client`**: Create separate client components for forms/UI that need client-side hooks
-3. **Suspense Boundary**: Always wrap client components that use `useSearchParams()` in a `<Suspense>` boundary
+To add support for a new manufacturing process, follow these steps:
 
-### 📁 Example Structure
+### 1. Create a New Form Component
 
+Create a new file named `[ProcessName]Form.tsx` in this directory. Use the existing forms as templates.
+
+Basic structure:
+
+```tsx
+"use client";
+
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+
+type FormData = {
+  // Define your form fields here
+  material: string;
+  quantity: number;
+  // Add other fields specific to your manufacturing process
+  complexity: 'low' | 'medium' | 'high';
+  deadline: string;
+};
+
+// Configure the API endpoint 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://gendra-backend.onrender.com';
+const QUOTE_ENDPOINT = `${API_BASE_URL}/predict-quote`;
+const HEALTH_ENDPOINT = `${API_BASE_URL}/`;
+
+export default function NewProcessForm() {
+  // Initialize state variables
+  
+  // Form submission logic
+  
+  // UI rendering
+}
 ```
-src/
-  ├── app/
-  │   └── quote/
-  │       ├── cnc-machining/
-  │       │   └── page.tsx            // Server Component (no "use client")
-  │       ├── injection-molding/
-  │       │   └── page.tsx            // Server Component (no "use client") 
-  │       └── sheet-metal/
-  │           └── page.tsx            // Server Component (no "use client")
-  └── components/
-      ├── Loading.tsx                 // Suspense fallback
-      └── quotes/
-          ├── CNCMachiningForm.tsx    // Client Component ("use client")
-          ├── InjectionMoldingForm.tsx// Client Component ("use client")
-          ├── SheetMetalForm.tsx      // Client Component ("use client")
-          └── QuoteFormWrapper.tsx    // Reusable wrapper with Suspense
+
+### 2. Implement the Required Functions
+
+Your form needs to implement these key functions:
+
+1. **handleInputChange** - To update form state when user inputs change
+2. **calculateFallbackQuote** - For local quote calculations when backend is offline
+3. **calculateQuote** - To send API requests to the backend for quote prediction
+4. **handleSubmit** - To process form submission
+
+### 3. Update the index.ts File
+
+Add your new form to the `index.ts` file to export it:
+
+```typescript
+export { default as NewProcessForm } from './NewProcessForm';
 ```
 
-### 🚨 Common Errors
+### 4. Add Backend Support
 
-- **Missing Suspense boundary**: If a component using `useSearchParams()` is not wrapped in Suspense, you'll get: `useSearchParams() should be wrapped in a suspense boundary at page "/quote/cnc-machining"`
-- **Forgetting `use client`**: If you try to use client hooks without the `"use client"` directive, you'll get: `useSearchParams is not defined` error
-- **Direct import in server component**: If you directly use a client component with `useSearchParams()` in a server component without Suspense, you'll get the missing Suspense boundary error
+If needed, update the backend to support calculating quotes for the new process:
 
-### 📚 Checklist for New Quote Routes
+1. Modify the `quote_service.py` to handle the new process type
+2. Add appropriate multipliers or calculations specific to the new process
 
-1. ✅ Create a separate client form component with `"use client"` directive
-2. ✅ Use `useSearchParams()` only within this client component
-3. ✅ Create a server-component page that uses `<QuoteFormWrapper>` to wrap the client component
-4. ✅ Ensure QuoteFormWrapper has a Suspense boundary around the client component
+### 5. Add to Navigation
 
-### 🧠 Remember
+Update the navigation or selection UI to include your new manufacturing process.
 
-Client hooks like `useSearchParams()` and `usePathname()` MUST:
-- Be used only in `"use client"` components 
-- Be wrapped in `<Suspense>` when rendered inside server components 
+## Common Components
+
+All quote forms share these common features:
+
+1. **Backend Status Indicator** - Shows if the pricing engine is online/offline
+2. **Fallback Calculation** - Local calculation when backend is unavailable
+3. **Quote Summary Display** - Shows the final quote amount and lead time
+4. **Form Prefilling** - Support for prefilling from RFQ parsing
+
+## Form Structure Guidelines
+
+For consistency, follow these guidelines:
+
+1. **Form Field Organization**:
+   - Group related fields (dimensions, material properties, etc.)
+   - Use a consistent two-column layout for desktop
+   - Single column for mobile views
+
+2. **Input Types**:
+   - Use select dropdowns for fields with predetermined options
+   - Use number inputs with appropriate min/max/step values
+   - Use checkboxes for boolean options
+   - Use date picker for deadline selection
+
+3. **UI Components**:
+   - Use consistent styling classes
+   - Include appropriate validation
+   - Show loading indicators during calculations
+
+## Testing Your New Form
+
+1. Test with backend online and offline to verify fallback calculation
+2. Test with various input combinations to ensure accurate quotes
+3. Test the RFQ prefilling functionality
+4. Test on different screen sizes to verify responsive design 
