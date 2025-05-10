@@ -3,6 +3,7 @@ import os
 import joblib
 import numpy as np
 import logging
+from quote_schemas.registry import get_schema_by_service_type
 
 # Define the path to the trained ML model
 MODEL_PATH = Path(__file__).parent / "model.pkl"
@@ -41,23 +42,9 @@ SERVICE_MULTIPLIERS = {
 }
 
 # Quote generation logic using the model and multipliers
-def get_quote(quantity: int, complexity: float, material: str, service_type: str, turnaround_days: int = 7) -> float:
-    try:
-        # Step 1: Predict base quote using ML model
-        features = np.array([[quantity, complexity]])
-        base_quote = quote_model.predict(features)[0]
-
-        # Step 2: Look up multipliers
-        material_multiplier = MATERIAL_MULTIPLIERS.get(material.lower(), MATERIAL_MULTIPLIERS['default'])
-        service_multiplier = SERVICE_MULTIPLIERS.get(service_type.lower(), SERVICE_MULTIPLIERS['default'])
-        urgency_multiplier = 1.3 if turnaround_days <= 5 else 1.0  # Extra charge for urgent jobs
-
-        # Step 3: Final quote calculation
-        final_quote = base_quote * material_multiplier * service_multiplier * urgency_multiplier
-        final_quote = round(max(final_quote, 50.0), 2)  # Minimum quote enforcement
-
-        return final_quote
-
-    except Exception as e:
-        logger.error(f"Quote generation error: {str(e)}")
-        raise RuntimeError("Failed to generate quote")
+def get_quote(fields: dict) -> float:
+    """
+    Delegates quote generation to the appropriate schema based on service_type.
+    """
+    schema = get_schema_by_service_type(fields["service_type"])
+    return schema.calculate_quote(fields)
