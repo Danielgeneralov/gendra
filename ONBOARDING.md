@@ -81,11 +81,36 @@ gendra/
 ## Setup Instructions
 
 ### Prerequisites
+
+#### For Both Mac and Windows
 - Node.js 18+ and npm
 - Python 3.9+
 - Git
 
+#### Mac-Specific Prerequisites
+- Homebrew (recommended for installing dependencies)
+  ```bash
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  ```
+
+- Install Node.js and npm via Homebrew:
+  ```bash
+  brew install node
+  ```
+
+- Install Python via Homebrew:
+  ```bash
+  brew install python@3.9
+  ```
+
+#### Windows-Specific Prerequisites
+- Node.js installer from [nodejs.org](https://nodejs.org/)
+- Python installer from [python.org](https://www.python.org/downloads/)
+  - Make sure to check "Add Python to PATH" during installation
+- Git for Windows from [git-scm.com](https://git-scm.com/download/win)
+
 ### Frontend Setup
+
 1. Clone the repository:
    ```bash
    git clone [repository-url]
@@ -111,19 +136,23 @@ gendra/
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ### Backend Setup
+
 1. Navigate to the backend directory:
    ```bash
    cd backend
    ```
 
 2. Create and activate a virtual environment:
+
+   #### For Windows
    ```bash
-   # Windows
    python -m venv venv
    venv\Scripts\activate
-
-   # macOS/Linux
-   python -m venv venv
+   ```
+   
+   #### For Mac/Linux
+   ```bash
+   python3 -m venv venv
    source venv/bin/activate
    ```
 
@@ -132,12 +161,42 @@ gendra/
    pip install -r requirements.txt
    ```
 
+   #### Mac-Specific Note
+   If you encounter SSL certificate issues during pip installation on Mac:
+   ```bash
+   pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
+   ```
+
 4. Start the FastAPI server:
+   
+   #### For Windows
    ```bash
    uvicorn main:app --reload
    ```
+   
+   #### For Mac/Linux
+   ```bash
+   python -m uvicorn main:app --reload
+   ```
 
 5. The API will be available at [http://localhost:8000](http://localhost:8000)
+
+### Testing the Backend API
+
+#### For Windows
+```bash
+# Using PowerShell script
+.\test_api.ps1
+
+# Or using Python
+python test_request.py
+```
+
+#### For Mac/Linux
+```bash
+# Using Python
+python3 test_request.py
+```
 
 ## Git Ignored Files
 
@@ -264,6 +323,30 @@ We follow a branch-based workflow to ensure code quality and protect the main br
 - Ensure the virtual environment is activated
 - If using the `dotenv` package, install it with `pip install python-dotenv`
 
+### Mac-Specific Common Issues
+- **Python Version Management**: If you have multiple Python versions, use pyenv
+  ```bash
+  brew install pyenv
+  pyenv install 3.9.x
+  pyenv global 3.9.x
+  ```
+
+- **Permission Issues**: If you encounter permission problems
+  ```bash
+  sudo chown -R $(whoami) /usr/local/lib/node_modules
+  sudo chown -R $(whoami) $(pip3 show pip | grep Location | cut -d' ' -f2)
+  ```
+
+### Windows-Specific Common Issues
+- **PowerShell Execution Policy**: If scripts are blocked
+  ```powershell
+  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+  ```
+
+- **Long Path Issues**: Windows has path length limitations
+  - Use shorter directory names
+  - Enable long paths in Windows 10/11 via registry or group policy
+
 ### Next.js Build Errors with Python Files
 - The project uses a webpack configuration to exclude Python files from Next.js processing
 
@@ -273,4 +356,7 @@ We follow a branch-based workflow to ensure code quality and protect the main br
 - [React Documentation](https://react.dev/)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [Supabase Documentation](https://supabase.com/docs)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs) 
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [Python Documentation](https://docs.python.org/)
+- [Mac Node.js Setup Guide](https://nodejs.org/en/download/package-manager#macos)
+- [Windows Python Setup Guide](https://docs.python.org/3/using/windows.html) 
