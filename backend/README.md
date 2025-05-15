@@ -36,4 +36,8 @@ FastAPI automatically generates interactive API documentation:
 ## System Documentation
 
 For a complete overview of the system, recent changes, and troubleshooting information, 
-please see the [ONBOARDING.md](./ONBOARDING.md) file in this directory. 
+please see the root-level documentation files:
+
+- [ONBOARDING.md](../ONBOARDING.md) - Complete system overview
+- [INSTALL_GUIDE.md](../INSTALL_GUIDE.md) - Installation instructions
+- [DEVELOPER_GUIDE.md](../DEVELOPER_GUIDE.md) - Development workflow 

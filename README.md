@@ -18,31 +18,13 @@ This repository contains the first phase of the Gendra application, focusing on:
 - Supabase account (for database)
 - Groq API key (for parsing)
 
-### Environment Variables
+### Quick Setup
 
-Create a `.env.local` file in the root directory with the following variables:
+For a simplified setup guide, see the [Installation Guide](INSTALL_GUIDE.md). This provides step-by-step instructions to get the application running quickly.
 
-```bash
-# Supabase Config
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_key
+### Environment Setup
 
-# Groq API Config
-GROQ_API_KEY=your_groq_api_key
-```
-
-### Installation
-
-```bash
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-```
-
-The application will be available at [http://localhost:3000](http://localhost:3000).
+For environment variable configuration, see the [Environment Variables Setup Guide](ENV_SETUP.md). This outlines all required variables and how to obtain the necessary credentials.
 
 ## Project Structure
 
@@ -107,10 +89,15 @@ cd backend
 python -m uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-## System Documentation
+## Documentation
 
-For a complete overview of the system architecture, recent changes, and troubleshooting information, 
-please see the [ONBOARDING.md](./backend/ONBOARDING.md) file in the backend directory.
+Gendra includes several documentation files to help you understand and work with the system:
+
+- [INSTALL_GUIDE.md](INSTALL_GUIDE.md) - Step-by-step installation instructions
+- [ENV_SETUP.md](ENV_SETUP.md) - Environment variable configuration guide
+- [ONBOARDING.md](ONBOARDING.md) - Complete system overview and architecture
+- [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) - Detailed development workflow
+- [backend/README.md](backend/README.md) - Backend-specific documentation
 
 ## Learn More
 

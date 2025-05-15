@@ -82,7 +82,7 @@ gendra/
 
 ### Prerequisites
 - Node.js 18+ and npm
-- Python 3.8+
+- Python 3.9+
 - Git
 
 ### Frontend Setup

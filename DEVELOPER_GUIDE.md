@@ -36,7 +36,7 @@ The application integrates with machine learning models to provide accurate quot
 
 ### Prerequisites
 
-- Node.js 16+ and npm
+- Node.js 18+ and npm
 - Python 3.9+
 - Git
 
