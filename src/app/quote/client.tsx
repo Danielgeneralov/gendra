@@ -16,6 +16,7 @@ interface AnalyticsProperties {
   [key: string]: string | number | boolean;
 }
 
+
 // Define form data type
 interface FormData {
   [key: string]: string | number | boolean;

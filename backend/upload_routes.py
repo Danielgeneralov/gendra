@@ -1,4 +1,4 @@
-from quote_service import quote_model
+from quote_service import get_quote
 import numpy as np
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
@@ -33,23 +33,13 @@ async def upload_file(file: UploadFile = File(...)):
         elif tmp_path.endswith(".pdf"):
             parsed_data = parse_pdf(tmp_path)
 
-        # 💡 Predict quote if all fields are present
-        if all(k in parsed_data for k in ("quantity", "complexity")):
-            features = np.array([[parsed_data["quantity"], parsed_data["complexity"]]])
-            base_quote = quote_model.predict(features)[0]
-
-            material = parsed_data.get("material", "default").lower()
-            multiplier = {
-                'aluminum': 1.0,
-                'steel': 1.2,
-                'plastic': 0.7,
-                'titanium': 3.0,
-                'carbon fiber': 2.5,
-                'default': 1.0
-            }.get(material, 1.0)
-
-            final_quote = round(max(50.0, base_quote * multiplier), 2)
-            parsed_data["quote"] = final_quote
+        # 💡 Calculate quote using schema-based engine
+        if all(k in parsed_data for k in ("quantity", "complexity", "service_type")):
+            try:
+                quote_amount = get_quote(parsed_data)
+                parsed_data["quote"] = quote_amount
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Quote calculation failed: {str(e)}")
 
         return JSONResponse(
             status_code=200,
@@ -77,9 +67,11 @@ def parse_spreadsheet(file_path: str) -> dict:
         first_row = df.iloc[0]
 
         return {
+            "service_type": str(first_row.get("service_type", "metal_fab")),
             "quantity": int(first_row.get("quantity", 1)),
             "material": str(first_row.get("material", "aluminum")),
-            "complexity": float(first_row.get("complexity", 1.0))
+            "complexity": float(first_row.get("complexity", 1.0)),
+            "turnaround_days": int(first_row.get("turnaround_days", 7))
         }
 
     except Exception as e:
@@ -95,19 +87,28 @@ def parse_pdf(file_path: str) -> dict:
 
         lines = text.lower().splitlines()
         data = {
+            "service_type": "metal_fab",
             "quantity": 1,
             "material": "aluminum",
-            "complexity": 1.0
+            "complexity": 1.0,
+            "turnaround_days": 7
         }
 
         for line in lines:
-            if "quantity" in line:
+            if "service type" in line or "service_type" in line:
+                data["service_type"] = line.split(":")[-1].strip()
+            elif "quantity" in line:
                 data["quantity"] = int("".join(filter(str.isdigit, line)))
             elif "material" in line:
                 data["material"] = line.split(":")[-1].strip()
             elif "complexity" in line:
                 try:
                     data["complexity"] = float(line.split(":")[-1])
+                except ValueError:
+                    pass
+            elif "turnaround" in line:
+                try:
+                    data["turnaround_days"] = int("".join(filter(str.isdigit, line)))
                 except ValueError:
                     pass
 
