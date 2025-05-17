@@ -1,5 +1,6 @@
 // API configuration for Gendra
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://gendra-backend.onrender.com';
+export const QUOTE_ENDPOINT = `${API_BASE_URL}/predict-quote`;
 
 // Default configs
 export const DEFAULT_INDUSTRY = 'metal_fabrication';

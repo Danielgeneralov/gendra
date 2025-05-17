@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { API_BASE_URL } from '../../app/config';
+import { API_BASE_URL, QUOTE_ENDPOINT } from '../../app/config';
 
 type FormData = {
   material: string;
@@ -17,7 +17,6 @@ type FormData = {
 };
 
 // Configure the API endpoint 
-const QUOTE_ENDPOINT = `${API_BASE_URL}/predict-quote`;
 const HEALTH_ENDPOINT = `${API_BASE_URL}/`;
 
 export default function CNCMachiningForm() {
