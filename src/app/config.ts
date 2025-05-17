@@ -1,5 +1,5 @@
 // API configuration for Gendra
-export const PYTHON_API_URL = process.env.NEXT_PUBLIC_PYTHON_API_URL || 'http://localhost:8000';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://gendra-backend.onrender.com';
 
 // Default configs
 export const DEFAULT_INDUSTRY = 'metal_fabrication';

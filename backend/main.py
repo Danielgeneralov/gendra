@@ -20,7 +20,11 @@ logger = logging.getLogger("gendra-backend")
 # ✅ CORS middleware (development-friendly)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_origins=[
+        "http://localhost:3000",
+        "https://gendra-beryl.vercel.app",
+        "https://gendra-backend.onrender.com"
+        ],  # Frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

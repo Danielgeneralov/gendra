@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { API_BASE_URL } from '../../app/config';
 
 type FormData = {
   assemblyType: string;
@@ -17,7 +18,6 @@ type FormData = {
 };
 
 // Configure the API endpoint 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://gendra-backend.onrender.com';
 const QUOTE_ENDPOINT = `${API_BASE_URL}/predict-quote`;
 const HEALTH_ENDPOINT = `${API_BASE_URL}/`;
 

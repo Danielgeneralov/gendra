@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { calculateFallbackQuote } from '@/lib/fallbackQuote';
 import { errorResponse, logInfo, logWarn } from '@/lib/errors';
+import { API_BASE_URL } from '../../../config';
 
 // External Dependencies:
 // - Python Backend (timeout 5s)
@@ -20,7 +21,7 @@ const ROUTE_PATH = '/api/v1/quote-calculate';
 const PYTHON_BACKEND_TIMEOUT = 5000; // 5 seconds
 
 // Python backend URL
-const PYTHON_BACKEND_URL = 'http://localhost:8000/calculate-quote';
+const PYTHON_BACKEND_URL = API_BASE_URL;
 
 /**
  * Load industry-specific configuration file if available
