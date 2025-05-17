@@ -18,6 +18,9 @@ type FormData = {
 // Configure the API endpoint 
 const HEALTH_ENDPOINT = `${API_BASE_URL}/`;
 
+// Add service type constant at the top after imports
+const SERVICE_TYPE = 'injection_molding';  // TODO: Make this dynamic using route-based context
+
 export default function InjectionMoldingForm() {
   const searchParams = useSearchParams();
   const isPrefill = searchParams.get('prefill') === 'true';
@@ -214,22 +217,22 @@ export default function InjectionMoldingForm() {
       // Get complexity value for backend
       const complexityValue = mapComplexityToValue(formData.complexity);
       
-      // Prepare the request body with all relevant parameters
+      // Prepare the request body with required backend fields
       const requestBody = {
-        // Essential fields for machine learning model
-        manufacturingProcess: 'injection-molding',
+        // Required fields for schema-based dispatch
+        service_type: SERVICE_TYPE,
         material: formData.material,
         quantity: formData.quantity,
         complexity: complexityValue,
         
-        // Injection molding specific parameters
-        partVolume: formData.volume,
-        partWeight: formData.partWeight,
-        surfaceFinish: formData.surfaceFinish,
-        colorMatching: formData.colorMatching,
+        // Additional parameters for injection molding calculation
+        part_volume: formData.volume,
+        part_weight: formData.partWeight,
+        surface_finish: formData.surfaceFinish,
+        color_matching: formData.colorMatching,
         
         // Optional metadata
-        requestedDeadline: formData.deadline || null
+        requested_deadline: formData.deadline || null
       };
       
       console.log('Sending request to backend:', requestBody);

@@ -19,6 +19,9 @@ type FormData = {
 // Configure the API endpoint 
 const HEALTH_ENDPOINT = `${API_BASE_URL}/`;
 
+// Add service type constant at the top after imports
+const SERVICE_TYPE = 'cnc_machining';  // TODO: Make this dynamic using route-based context
+
 export default function CNCMachiningForm() {
   const searchParams = useSearchParams();
   const isPrefill = searchParams.get('prefill') === 'true';
@@ -229,24 +232,25 @@ export default function CNCMachiningForm() {
       // Get complexity value for backend
       const complexityValue = mapComplexityToValue(formData.complexity);
       
-      // Prepare the request body with all relevant parameters
+      // Prepare the request body with required backend fields
       const requestBody = {
-        // Essential fields for machine learning model
+        // Required fields for schema-based dispatch
+        service_type: SERVICE_TYPE,
         material: formData.material,
         quantity: formData.quantity,
         complexity: complexityValue,
         
-        // Additional parameters that may improve prediction accuracy
+        // Additional parameters for CNC-specific calculation
         dimensions: {
           length: formData.length,
           width: formData.width,
           height: formData.height
         },
         tolerance: formData.tolerance,
-        surfaceFinish: formData.surfaceFinish,
+        surface_finish: formData.surfaceFinish,
         
         // Optional metadata
-        requestedDeadline: formData.deadline || null
+        requested_deadline: formData.deadline || null
       };
       
       console.log('Sending request to backend:', requestBody);

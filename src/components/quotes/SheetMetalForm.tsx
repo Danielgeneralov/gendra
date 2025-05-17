@@ -20,6 +20,9 @@ type FormData = {
 // Configure the API endpoint 
 const HEALTH_ENDPOINT = `${API_BASE_URL}/`;
 
+// Add service type constant at the top after imports
+const SERVICE_TYPE = 'sheet_metal';  // TODO: Make this dynamic using route-based context
+
 export default function SheetMetalForm() {
   const searchParams = useSearchParams();
   const isPrefill = searchParams.get('prefill') === 'true';
@@ -197,31 +200,36 @@ export default function SheetMetalForm() {
     setQuoteError(null);
     
     try {
-      // Prepare request data for backend
+      // Get complexity value for backend
+      const complexityValue = mapComplexityToValue(formData.complexity);
+      
+      // Prepare the request body with required backend fields
       const requestBody = {
-        // Key identifiers
-        manufacturingProcess: 'sheet-metal',
+        // Required fields for schema-based dispatch
+        service_type: SERVICE_TYPE,
         material: formData.material,
         quantity: formData.quantity,
-        complexity: mapComplexityToValue(formData.complexity),
+        complexity: complexityValue,
         
-        // Sheet-metal specific attributes
+        // Additional parameters for sheet metal calculation
         dimensions: {
           length: formData.length,
-          width: formData.width
+          width: formData.width,
+          thickness: formData.thickness
         },
-        thickness: formData.thickness,
-        bends: formData.bends,
-        holes: formData.holes,
-        finish: formData.finish,
+        features: {
+          bends: formData.bends,
+          holes: formData.holes
+        },
+        surface_finish: formData.finish,
         
         // Optional metadata
-        requestedDeadline: formData.deadline || null
+        requested_deadline: formData.deadline || null
       };
       
       console.log('Sending request to backend:', requestBody);
       
-      // Call backend API
+      // Call the backend API
       const response = await fetch(QUOTE_ENDPOINT, {
         method: 'POST',
         headers: {

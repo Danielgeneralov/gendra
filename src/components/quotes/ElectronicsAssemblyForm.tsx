@@ -20,6 +20,9 @@ type FormData = {
 // Configure the API endpoint 
 const HEALTH_ENDPOINT = `${API_BASE_URL}/`;
 
+// Add service type constant at the top after imports
+const SERVICE_TYPE = 'electronics_assembly';  // TODO: Make this dynamic using route-based context
+
 export default function ElectronicsAssemblyForm() {
   const searchParams = useSearchParams();
   const isPrefill = searchParams.get('prefill') === 'true';
@@ -241,24 +244,26 @@ export default function ElectronicsAssemblyForm() {
       // Get complexity value for backend
       const complexityValue = mapComplexityToValue(formData.complexity);
       
-      // Prepare the request body with all relevant parameters
+      // Prepare the request body with required backend fields
       const requestBody = {
-        // Essential fields for machine learning model
-        manufacturingProcess: 'electronics-assembly',
-        assemblyType: formData.assemblyType,
+        // Required fields for schema-based dispatch
+        service_type: SERVICE_TYPE,
+        material: formData.assemblyType, // Using assembly type as material type
         quantity: formData.quantity,
         complexity: complexityValue,
         
-        // Electronics-assembly specific parameters
-        componentCount: formData.componentCount,
-        boardLayers: formData.boardLayers,
-        hasSMT: formData.hasSMT,
-        hasTHT: formData.hasTHT,
-        testingRequired: formData.testingRequired,
-        turntime: formData.turntime,
+        // Additional parameters for electronics assembly
+        component_count: formData.componentCount,
+        board_layers: formData.boardLayers,
+        assembly_options: {
+          smt: formData.hasSMT,
+          tht: formData.hasTHT,
+          testing: formData.testingRequired
+        },
+        turnaround_time: formData.turntime,
         
         // Optional metadata
-        requestedDeadline: formData.deadline || null
+        requested_deadline: formData.deadline || null
       };
       
       console.log('Sending request to backend:', requestBody);

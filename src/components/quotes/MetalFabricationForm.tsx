@@ -18,6 +18,9 @@ type FormData = {
 // Configure the API endpoint 
 const HEALTH_ENDPOINT = `${API_BASE_URL}/`;
 
+// Add service type constant at the top after imports
+const SERVICE_TYPE = 'metal_fab';  // TODO: Make this dynamic using route-based context
+
 export default function MetalFabricationForm() {
   const searchParams = useSearchParams();
   const isPrefill = searchParams.get('prefill') === 'true';
@@ -200,24 +203,24 @@ export default function MetalFabricationForm() {
       // Get complexity value for backend
       const complexityValue = mapComplexityToValue(formData.complexity);
       
-      // Prepare the request body with all relevant parameters
+      // Prepare the request body with required backend fields
       const requestBody = {
-        // Essential fields for machine learning model
-        manufacturingProcess: 'metal-fabrication',
+        // Required fields for schema-based dispatch
+        service_type: SERVICE_TYPE,
         material: formData.material,
         quantity: formData.quantity,
         complexity: complexityValue,
         
-        // Metal-fabrication specific parameters
+        // Additional parameters for metal fabrication
         dimensions: {
           length: formData.length,
-          width: formData.width
+          width: formData.width,
+          thickness: formData.thickness
         },
-        thickness: formData.thickness,
-        finishType: formData.finishType,
+        surface_finish: formData.finishType,
         
         // Optional metadata
-        requestedDeadline: formData.deadline || null
+        requested_deadline: formData.deadline || null
       };
       
       console.log('Sending request to backend:', requestBody);
