@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, Header
 from pydantic import BaseModel
 from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 from upload_routes import router as upload_router
 from quote_service import get_quote, quote_model
+from client_config import get_client_config
 
 # ✅ Enhanced logging configuration
 logging.basicConfig(
@@ -76,6 +77,7 @@ class QuoteRequest(BaseModel):
 # ✅ Schema for quote output
 class QuoteResponse(BaseModel):
     quote: float
+    client_branding: Optional[dict] = None
 
 # ✅ Health check
 @app.get("/")
@@ -83,26 +85,53 @@ async def root():
     logger.info("Health check endpoint called")
     return {"message": "Gendra backend is running"}
 
-# ✅ Prediction route with schema-based logic
+# ✅ Prediction route with schema-based logic and client configuration
 @app.post("/predict-quote", response_model=QuoteResponse)
-async def predict_quote(request: Request, quote_req: QuoteRequest):
+async def predict_quote(
+    request: Request, 
+    quote_req: QuoteRequest,
+    x_client_id: Optional[str] = Header(None)
+):
     try:
         logger.info(f"Processing quote request for service_type: {quote_req.service_type}")
         logger.info(f"Request body: {await request.json()}")
+        logger.info(f"Client ID from header: {x_client_id}")
+
+        # Get client configuration if client ID is provided
+        client_config = None
+        if x_client_id:
+            try:
+                client_config = get_client_config(x_client_id)
+                logger.info(f"Using configuration for client: {x_client_id}")
+            except ValueError as e:
+                logger.warning(f"Client config not found: {str(e)}")
+                # Continue with default configuration
+            except Exception as e:
+                logger.error(f"Error fetching client config: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Error fetching client configuration: {str(e)}")
 
         if not quote_req.service_type:
             raise HTTPException(status_code=400, detail="service_type is required")
 
+        # Apply client-specific quote schema if available
+        quote_schema = client_config.get("quote_schema") if client_config else None
+        
         quote = get_quote({
             "service_type": quote_req.service_type,
             "material": quote_req.material,
             "quantity": quote_req.quantity,
             "complexity": quote_req.complexity,
-            "turnaround_days": quote_req.turnaround_days
+            "turnaround_days": quote_req.turnaround_days,
+            "quote_schema": quote_schema  # Pass schema to quote service
         })
 
+        response = {
+            "quote": quote,
+            "client_branding": client_config.get("branding") if client_config else None
+        }
+
         logger.info(f"Quote calculation successful: ${quote}")
-        return {"quote": quote}
+        return response
 
     except Exception as e:
         logger.error(f"Quote calculation error: {str(e)}", exc_info=True)
