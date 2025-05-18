@@ -25,9 +25,9 @@ for env_path in env_paths:
 # Initialize Supabase client with fallback variable names
 SUPABASE_URL = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
 SUPABASE_KEY = (
-    os.getenv("SUPABASE_SERVICE_KEY") or 
-    os.getenv("SUPABASE_SERVICE_ROLE_KEY") or 
-    os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+    os.getenv("SUPABASE_SERVICE_KEY")
+    or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 )
 
 if not SUPABASE_URL or not SUPABASE_KEY:
@@ -38,55 +38,64 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     
     Current working directory: {}
     Tried loading from: {}
-    """.format(os.getcwd(), ", ".join(env_paths))
+    """.format(
+        os.getcwd(), ", ".join(env_paths)
+    )
     logger.error(error_msg)
     raise RuntimeError(error_msg)
 
 logger.info(f"Initializing Supabase client with URL: {SUPABASE_URL[:8]}...")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+
 @lru_cache(maxsize=100)
 def get_client_config(client_id: str) -> Dict[str, Any]:
     """
     Fetches client configuration from Supabase with caching.
-    
+
     Args:
         client_id: The unique identifier for the client
-        
+
     Returns:
         Dict containing client configuration
-        
+
     Raises:
         HTTPException: If client config not found or other error occurs
     """
     try:
         logger.info(f"Fetching config for client: {client_id}")
-        
+
         # Query the client_configs table
-        response = supabase.table("client_configs").select("*").eq("client_id", client_id).execute()
-        
+        response = (
+            supabase.table("client_configs")
+            .select("*")
+            .eq("client_id", client_id)
+            .execute()
+        )
+
         if not response.data:
             logger.error(f"No config found for client: {client_id}")
             raise ValueError(f"No configuration found for client: {client_id}")
-            
+
         config = response.data[0]
         logger.info(f"Successfully fetched config for client: {client_id}")
-        
+
         return {
             "client_id": config["client_id"],
             "quote_schema": config["quote_schema"],
             "visible_fields": config["visible_fields"],
-            "branding": config["branding"]
+            "branding": config["branding"],
         }
-        
+
     except Exception as e:
         logger.error(f"Error fetching client config: {str(e)}")
         raise
 
+
 def clear_client_config_cache(client_id: Optional[str] = None):
     """
     Clears the client config cache for a specific client or all clients.
-    
+
     Args:
         client_id: Optional client ID to clear specific cache entry
     """
@@ -95,4 +104,4 @@ def clear_client_config_cache(client_id: Optional[str] = None):
         logger.info(f"Cleared cache for client: {client_id}")
     else:
         get_client_config.cache_clear()
-        logger.info("Cleared entire client config cache") 
+        logger.info("Cleared entire client config cache")

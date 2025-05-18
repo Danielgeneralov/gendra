@@ -9,12 +9,13 @@ import pdfplumber
 
 router = APIRouter()
 
+
 @router.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     allowed_types = {
         "application/pdf": ".pdf",
         "text/csv": ".csv",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx"
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
     }
 
     if file.content_type not in allowed_types:
@@ -39,7 +40,9 @@ async def upload_file(file: UploadFile = File(...)):
                 quote_amount = get_quote(parsed_data)
                 parsed_data["quote"] = quote_amount
             except Exception as e:
-                raise HTTPException(status_code=400, detail=f"Quote calculation failed: {str(e)}")
+                raise HTTPException(
+                    status_code=400, detail=f"Quote calculation failed: {str(e)}"
+                )
 
         return JSONResponse(
             status_code=200,
@@ -47,8 +50,8 @@ async def upload_file(file: UploadFile = File(...)):
                 "message": "File uploaded successfully",
                 "filename": file.filename,
                 "data": parsed_data,
-                "path": tmp_path  # optional for debugging
-            }
+                "path": tmp_path,  # optional for debugging
+            },
         )
 
     except Exception as e:
@@ -71,7 +74,7 @@ def parse_spreadsheet(file_path: str) -> dict:
             "quantity": int(first_row.get("quantity", 1)),
             "material": str(first_row.get("material", "aluminum")),
             "complexity": float(first_row.get("complexity", 1.0)),
-            "turnaround_days": int(first_row.get("turnaround_days", 7))
+            "turnaround_days": int(first_row.get("turnaround_days", 7)),
         }
 
     except Exception as e:
@@ -91,7 +94,7 @@ def parse_pdf(file_path: str) -> dict:
             "quantity": 1,
             "material": "aluminum",
             "complexity": 1.0,
-            "turnaround_days": 7
+            "turnaround_days": 7,
         }
 
         for line in lines:
