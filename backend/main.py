@@ -3,9 +3,11 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from fastapi.middleware.cors import CORSMiddleware
 import logging
+import uuid
 from upload_routes import router as upload_router
 from quote_service import get_quote, quote_model
 from client_config import get_client_config, supabase
+from quote_logger import log_quote_to_supabase
 
 # ✅ Enhanced logging configuration
 logging.basicConfig(
@@ -214,12 +216,32 @@ async def predict_quote(
             }
         )
 
+        # Generate quote ID for logging
+        quote_id = str(uuid.uuid4())
+
+        # Prepare response
         response = {
             "quote": quote,
             "client_branding": client_config.get("branding") if client_config else None,
         }
 
-        logger.info(f"Quote calculation successful: ${quote}")
+        # Log the quote non-blockingly
+        try:
+            log_quote_to_supabase(
+                quote_id=quote_id,
+                client_id=x_client_id,
+                quote=quote,
+                input_data=quote_req.dict(),
+                metadata={
+                    "source": "api_request",
+                    "form_type": quote_req.service_type,
+                    "client_theme": client_config.get("branding", {}).get("theme_name", "default") if client_config else "default",
+                },
+            )
+        except Exception as e:
+            logger.warning(f"Quote logging failed (non-critical): {str(e)}")
+            # Continue with response regardless of logging failure
+
         return response
 
     except Exception as e:
