@@ -64,7 +64,7 @@ class QuoteRequest(BaseModel):
     turnaround_days: Optional[int] = 7
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "service_type": "cnc_machining",
                 "material": "aluminum",
@@ -136,6 +136,38 @@ async def predict_quote(
     except Exception as e:
         logger.error(f"Quote calculation error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to generate quote: {str(e)}")
+
+# ✅ Client config route
+@app.get("/client-config")
+async def get_configuration(
+    request: Request,
+    client_id: Optional[str] = None,
+    x_client_id: Optional[str] = Header(None)
+):
+    logger.info("Client config endpoint called")
+    logger.info(f"Query param client_id: {client_id}")
+    logger.info(f"Header x-client-id: {x_client_id}")
+    
+    # Use client_id from query param or header
+    final_client_id = client_id or x_client_id
+    
+    if not final_client_id:
+        logger.error("No client_id provided in query param or header")
+        raise HTTPException(
+            status_code=400,
+            detail="client_id must be provided either as a query parameter or x-client-id header"
+        )
+    
+    try:
+        config = get_client_config(final_client_id)
+        logger.info(f"Successfully retrieved config for client: {final_client_id}")
+        return config
+    except ValueError as e:
+        logger.error(f"Config not found for client {final_client_id}: {str(e)}")
+        raise HTTPException(status_code=404, detail=f"Configuration not found for client: {final_client_id}")
+    except Exception as e:
+        logger.error(f"Error fetching client config: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error while fetching client configuration")
 
 if __name__ == "__main__":
     import uvicorn
