@@ -1,13 +1,17 @@
 // src/app/quote/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import RFQParserTabs from "@/components/RFQParserTabs";
 import IndustryCarousel from "@/components/IndustryCarousel";
 import { INDUSTRIES } from "@/lib/industryData";
 import type { ParsedRFQ } from "@/types/ParsedRFQ";
+import { useProtectedPage } from "@/lib/hooks/useProtectedPage";
+
+// Storage key for quote form data
+const STORAGE_KEY = "gendra_draft_quote";
 
 // Industry mapping for routing from parser results to slugs
 const INDUSTRY_MAP: Record<string, string> = {
@@ -24,14 +28,43 @@ const INDUSTRY_MAP: Record<string, string> = {
 };
 
 export default function QuotePage() {
+  useProtectedPage();
+  
   const router = useRouter();
   const [parsingFailed, setParsingFailed] = useState(false);
   const [parsingError, setParsingError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  
+  // State for storing quote form data
+  const [quoteData, setQuoteData] = useState<ParsedRFQ | null>(null);
+
+  // Restore quote form data from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        setQuoteData(JSON.parse(saved));
+        console.log("Restored quote draft from localStorage");
+      } catch (error) {
+        console.warn("Failed to restore quote draft", error);
+      }
+    }
+  }, []);
+
+  // Save quote form data to localStorage as user types
+  useEffect(() => {
+    if (quoteData) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(quoteData));
+    }
+  }, [quoteData]);
 
   // Handler for when RFQ is successfully parsed
   const handleParsedRFQ = (parsedData: ParsedRFQ, detectedIndustry?: string) => {
     // Use the industry field from parsed data if available, otherwise use the detected industry
     const industryToUse = parsedData.industry || detectedIndustry;
+    
+    // Update the quoteData state with parsed data (will trigger save to localStorage)
+    setQuoteData(parsedData);
     
     if (!industryToUse) {
       setParsingFailed(true);
@@ -47,6 +80,7 @@ export default function QuotePage() {
     
     if (industrySlug) {
       try {
+        setSubmitting(true);
         // Store the parsed data in sessionStorage for the industry page to access
         sessionStorage.setItem('lastParsedRFQ', JSON.stringify(parsedData));
         
@@ -56,11 +90,28 @@ export default function QuotePage() {
         console.error("Error storing parsed RFQ data:", error);
         // Still try to route even if storage fails
         router.push(`/quote/${industrySlug}?prefill=true`);
+      } finally {
+        // In a real application, this finally block would be reached
+        // but due to navigation, it might not execute
+        setSubmitting(false);
       }
     } else {
       // No matching industry found
       setParsingFailed(true);
       setParsingError(`Unknown industry: "${industryToUse}"`);
+    }
+  };
+
+  // Handler for clearing localStorage when the quote is successfully submitted
+  const handleSuccessfulSubmit = () => {
+    setSubmitting(true);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      setQuoteData(null);
+      console.log("Quote submitted successfully, cleared localStorage");
+      // Additional success handling would go here
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -84,6 +135,53 @@ export default function QuotePage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="bg-[#0A1828]/50 backdrop-blur-sm p-8 rounded-xl shadow-xl border border-[#050C1C] hover:border-[#4A6FA6]/50 transition-all duration-300 max-w-4xl mx-auto"
           >
+            {submitting && (
+              <div className="absolute inset-0 bg-[#0A1828]/80 backdrop-blur-sm flex items-center justify-center rounded-xl z-10">
+                <div className="text-center">
+                  <svg className="animate-spin h-10 w-10 text-blue-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <p className="text-blue-300 text-lg font-medium">Processing your request...</p>
+                </div>
+              </div>
+            )}
+            
+            {quoteData && (
+              <div className="mb-4 p-3 bg-blue-900/30 border border-blue-800 rounded-md">
+                <p className="text-blue-200 font-medium">
+                  We found a saved quote draft. Would you like to continue?
+                </p>
+                <div className="mt-2 flex space-x-3">
+                  <button
+                    onClick={() => {
+                      // Use saved data
+                      setSubmitting(true);
+                      const industrySlug = INDUSTRY_MAP[quoteData.industry?.toLowerCase().trim() || ""];
+                      if (industrySlug) {
+                        router.push(`/quote/${industrySlug}?prefill=true`);
+                      }
+                    }}
+                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm"
+                    disabled={submitting}
+                  >
+                    Continue
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Clear saved data
+                      localStorage.removeItem(STORAGE_KEY);
+                      setQuoteData(null);
+                    }}
+                    className="px-3 py-1 bg-transparent hover:bg-slate-800 text-slate-300 rounded-md text-sm"
+                    disabled={submitting}
+                  >
+                    Start New
+                  </button>
+                </div>
+              </div>
+            )}
+            
             <h2 className="text-2xl font-semibold text-[#4A6FA6] mb-4">Upload your RFQ — we&apos;ll handle the rest.</h2>
             <p className="text-[#94A3B8] mb-4">
               Upload a file or paste your RFQ text, and our AI will extract the key details and guide you to the right quoting form for your industry.

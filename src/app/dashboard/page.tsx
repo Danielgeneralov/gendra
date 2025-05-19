@@ -1,6 +1,56 @@
 "use client";
 
-export default function DashboardPage() {
+import { useState, useEffect } from "react";
+import { useProtectedPage } from "@/lib/hooks/useProtectedPage";
+
+// Skeleton component for dashboard while loading
+function SkeletonDashboard() {
+  return (
+    <div className="py-16 px-4 sm:px-6 lg:px-8 min-h-screen bg-gradient-to-b from-black via-[#050C1C] to-[#0A1828]">
+      <div className="max-w-7xl mx-auto">
+        <div className="h-8 w-64 bg-[#0A1828]/70 rounded-md animate-pulse mb-2"></div>
+        <div className="h-6 w-96 bg-[#0A1828]/50 rounded-md animate-pulse mb-8"></div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-[#0A1828]/50 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-[#050C1C] hover:border-[#4A6FA6]/50 transition-all duration-300">
+              <div className="h-6 w-36 bg-[#0A1828]/70 rounded-md animate-pulse mb-4"></div>
+              <div className="flex justify-between items-center">
+                <div className="h-8 w-12 bg-[#0A1828]/70 rounded-md animate-pulse"></div>
+                <div className="h-6 w-20 bg-[#0A1828]/70 rounded-md animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <div className="bg-[#0A1828]/50 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-[#050C1C] hover:border-[#4A6FA6]/50 transition-all duration-300 mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <div className="h-6 w-36 bg-[#0A1828]/70 rounded-md animate-pulse"></div>
+            <div className="h-5 w-16 bg-[#0A1828]/70 rounded-md animate-pulse"></div>
+          </div>
+          
+          <div className="flex justify-center items-center py-16">
+            <div className="h-48 w-56 bg-[#0A1828]/70 rounded-md animate-pulse"></div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2].map((i) => (
+            <div key={i} className="bg-[#0A1828]/50 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-[#050C1C] hover:border-[#4A6FA6]/50 transition-all duration-300">
+              <div className="h-6 w-48 bg-[#0A1828]/70 rounded-md animate-pulse mb-6"></div>
+              <div className="flex justify-center items-center py-16">
+                <div className="h-24 w-56 bg-[#0A1828]/70 rounded-md animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Actual dashboard content
+function ActualDashboard() {
   return (
     <div className="py-16 px-4 sm:px-6 lg:px-8 min-h-screen bg-gradient-to-b from-black via-[#050C1C] to-[#0A1828]">
       <div className="max-w-7xl mx-auto">
@@ -88,4 +138,31 @@ export default function DashboardPage() {
       </div>
     </div>
   );
+}
+
+export default function DashboardPage() {
+  useProtectedPage();
+  
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    // Simulate data loading
+    const timer = setTimeout(() => setLoading(false), 600);
+    
+    // In a real application, you would fetch data here
+    // const fetchData = async () => {
+    //   try {
+    //     // Fetch dashboard data
+    //     setLoading(false);
+    //   } catch (error) {
+    //     console.error("Failed to load dashboard data:", error);
+    //     setLoading(false);
+    //   }
+    // };
+    // fetchData();
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  return loading ? <SkeletonDashboard /> : <ActualDashboard />;
 }

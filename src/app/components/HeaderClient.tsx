@@ -3,13 +3,21 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { Menu, X } from "lucide-react";
+import { useAuth } from "@/context/useAuth";
+import { useProtectedPage } from "@/lib/hooks/useProtectedPage";
 
 export function HeaderClient() {
+  // Using the protected page hook to handle authentication
+  useProtectedPage();
+  
   const [isScrolled, setIsScrolled] = useState(false);
   const [isQuoteDropdownOpen, setIsQuoteDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+  const { session, loading, supabase } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,9 +29,12 @@ export function HeaderClient() {
         setIsQuoteDropdownOpen(false);
       }
       
-      // Close mobile menu when clicking outside
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
         setIsMobileMenuOpen(false);
+      }
+
+      if (accountMenuRef.current && !accountMenuRef.current.contains(event.target as Node)) {
+        setIsAccountMenuOpen(false);
       }
     };
 
@@ -31,6 +42,7 @@ export function HeaderClient() {
       if (event.key === 'Escape') {
         setIsMobileMenuOpen(false);
         setIsQuoteDropdownOpen(false);
+        setIsAccountMenuOpen(false);
       }
     };
 
@@ -50,27 +62,24 @@ export function HeaderClient() {
     if (!isMobileMenuOpen) return;
     
     let lastScrollY = window.scrollY;
-    const scrollThreshold = 20; // Minimum scroll distance required to close menu
+    const scrollThreshold = 20;
     let isThrottled = false;
     
     const handleScroll = () => {
       if (isThrottled) return;
       
-      // Calculate scroll distance
       const currentScrollY = window.scrollY;
       const scrollDistance = Math.abs(currentScrollY - lastScrollY);
       
-      // Only close if scrolled more than threshold
       if (scrollDistance > scrollThreshold) {
         closeMobileMenu();
       }
       
-      // Throttle for smoother scrolling
       isThrottled = true;
       setTimeout(() => {
         isThrottled = false;
         lastScrollY = window.scrollY;
-      }, 300); // 300ms throttle delay
+      }, 300);
     };
     
     window.addEventListener('scroll', handleScroll);
@@ -81,6 +90,13 @@ export function HeaderClient() {
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
   };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setIsAccountMenuOpen(false);
+  };
+
+  if (loading) return null;
 
   return (
     <header 
@@ -106,96 +122,153 @@ export function HeaderClient() {
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="flex items-center space-x-4">
-              <NavLink href="/" isScrolled={isScrolled}>Home</NavLink>
-              
-              {/* Quote Dropdown */}
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setIsQuoteDropdownOpen(!isQuoteDropdownOpen)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center ${
-                    isScrolled
-                      ? 'text-slate-200 hover:text-white hover:bg-slate-800/50'
-                      : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100/80'
-                  }`}
-                >
-                  Quote
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className={`h-4 w-4 ml-1 transition-transform ${isQuoteDropdownOpen ? 'rotate-180' : ''}`} 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                {isQuoteDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                    <Link 
-                      href="/quote" 
-                      className="block px-4 py-3 text-sm font-bold text-gray-900 bg-gray-50 hover:bg-gray-100 border-l-4 border-blue-500"
-                      onClick={() => setIsQuoteDropdownOpen(false)}
+              {session ? (
+                <>
+                  <NavLink href="/" isScrolled={isScrolled}>Home</NavLink>
+                  
+                  {/* Quote Dropdown */}
+                  <div className="relative" ref={dropdownRef}>
+                    <button
+                      onClick={() => setIsQuoteDropdownOpen(!isQuoteDropdownOpen)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center ${
+                        isScrolled
+                          ? 'text-slate-200 hover:text-white hover:bg-slate-800/50'
+                          : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100/80'
+                      }`}
                     >
-                      <div className="flex items-center">
-                        <svg 
-                          xmlns="http://www.w3.org/2000/svg" 
-                          className="h-4 w-4 mr-2 text-blue-500" 
-                          fill="none" 
-                          viewBox="0 0 24 24" 
-                          stroke="currentColor"
+                      Quote
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        className={`h-4 w-4 ml-1 transition-transform ${isQuoteDropdownOpen ? 'rotate-180' : ''}`} 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    {isQuoteDropdownOpen && (
+                      <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <Link 
+                          href="/quote" 
+                          className="block px-4 py-3 text-sm font-bold text-gray-900 bg-gray-50 hover:bg-gray-100 border-l-4 border-blue-500"
+                          onClick={() => setIsQuoteDropdownOpen(false)}
                         >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                        AI Quote Parser
+                          <div className="flex items-center">
+                            <svg 
+                              xmlns="http://www.w3.org/2000/svg" 
+                              className="h-4 w-4 mr-2 text-blue-500" 
+                              fill="none" 
+                              viewBox="0 0 24 24" 
+                              stroke="currentColor"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                            AI Quote Parser
+                          </div>
+                        </Link>
+                        
+                        <div className="mt-2 pt-2 pb-1 border-t border-gray-200">
+                          <p className="px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Industries</p>
+                        </div>
+                        
+                        <Link 
+                          href="/quote/metal-fabrication" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsQuoteDropdownOpen(false)}
+                        >
+                          Metal Fabrication
+                        </Link>
+                        <Link 
+                          href="/quote/injection-molding" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsQuoteDropdownOpen(false)}
+                        >
+                          Injection Molding
+                        </Link>
+                        <Link 
+                          href="/quote/cnc-machining" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsQuoteDropdownOpen(false)}
+                        >
+                          CNC Machining
+                        </Link>
+                        <Link 
+                          href="/quote/sheet-metal" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsQuoteDropdownOpen(false)}
+                        >
+                          Sheet Metal
+                        </Link>
+                        <Link 
+                          href="/quote/electronics-assembly" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsQuoteDropdownOpen(false)}
+                        >
+                          Electronics Assembly
+                        </Link>
                       </div>
-                    </Link>
-                    
-                    <div className="mt-2 pt-2 pb-1 border-t border-gray-200">
-                      <p className="px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Industries</p>
-                    </div>
-                    
-                    <Link 
-                      href="/quote/metal-fabrication" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setIsQuoteDropdownOpen(false)}
-                    >
-                      Metal Fabrication
-                    </Link>
-                    <Link 
-                      href="/quote/injection-molding" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setIsQuoteDropdownOpen(false)}
-                    >
-                      Injection Molding
-                    </Link>
-                    <Link 
-                      href="/quote/cnc-machining" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setIsQuoteDropdownOpen(false)}
-                    >
-                      CNC Machining
-                    </Link>
-                    <Link 
-                      href="/quote/sheet-metal" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setIsQuoteDropdownOpen(false)}
-                    >
-                      Sheet Metal
-                    </Link>
-                    <Link 
-                      href="/quote/electronics-assembly" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setIsQuoteDropdownOpen(false)}
-                    >
-                      Electronics Assembly
-                    </Link>
+                    )}
                   </div>
-                )}
-              </div>
-              
-              <NavLink href="/schedule" isScrolled={isScrolled}>Schedule</NavLink>
-              <NavLink href="/dashboard" isScrolled={isScrolled}>Dashboard</NavLink>
+                  
+                  <NavLink href="/schedule" isScrolled={isScrolled}>Schedule</NavLink>
+                  <NavLink href="/dashboard" isScrolled={isScrolled}>Dashboard</NavLink>
+
+                  {/* Account Menu */}
+                  <div className="relative" ref={accountMenuRef}>
+                    <button
+                      onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                        isScrolled
+                          ? 'text-slate-200 hover:text-white hover:bg-slate-800/50'
+                          : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100/80'
+                      }`}
+                      aria-label="Account menu"
+                    >
+                      Account
+                    </button>
+                    {isAccountMenuOpen && (
+                      <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <Link 
+                          href="/account/preferences" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsAccountMenuOpen(false)}
+                        >
+                          Preferences
+                        </Link>
+                        <button
+                          onClick={handleSignOut}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Sign Out
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <NavLink href="/" isScrolled={isScrolled}>Home</NavLink>
+                  <NavLink href="/products" isScrolled={isScrolled}>Products</NavLink>
+                  <NavLink href="/pricing" isScrolled={isScrolled}>Pricing</NavLink>
+                  <NavLink href="/faq" isScrolled={isScrolled}>FAQ</NavLink>
+                  <NavLink 
+                    href="/signin" 
+                    isScrolled={isScrolled}
+                    className="text-blue-400 hover:text-blue-300"
+                  >
+                    Log In
+                  </NavLink>
+                  <NavLink 
+                    href="/signup" 
+                    isScrolled={isScrolled}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg ml-2"
+                  >
+                    Sign Up
+                  </NavLink>
+                </>
+              )}
             </div>
           </div>
           
@@ -247,50 +320,85 @@ export function HeaderClient() {
             </button>
           </div>
           <div className="px-4 py-6 flex flex-col gap-4">
-            <MobileNavLink href="/" onClick={closeMobileMenu}>Home</MobileNavLink>
-            <MobileNavLink href="/quote" onClick={closeMobileMenu}>Quote</MobileNavLink>
-            
-            {/* Mobile Industry Links (simplified) */}
-            <div className="ml-4 pl-4 border-l border-slate-700/50 flex flex-col gap-3">
-              <MobileNavLink 
-                href="/quote/metal-fabrication" 
-                onClick={closeMobileMenu}
-                className="text-base"
-              >
-                Metal Fabrication
-              </MobileNavLink>
-              <MobileNavLink 
-                href="/quote/injection-molding" 
-                onClick={closeMobileMenu}
-                className="text-base"
-              >
-                Injection Molding
-              </MobileNavLink>
-              <MobileNavLink 
-                href="/quote/cnc-machining" 
-                onClick={closeMobileMenu}
-                className="text-base"
-              >
-                CNC Machining
-              </MobileNavLink>
-              <MobileNavLink 
-                href="/quote/sheet-metal" 
-                onClick={closeMobileMenu}
-                className="text-base"
-              >
-                Sheet Metal
-              </MobileNavLink>
-              <MobileNavLink 
-                href="/quote/electronics-assembly" 
-                onClick={closeMobileMenu}
-                className="text-base"
-              >
-                Electronics Assembly
-              </MobileNavLink>
-            </div>
-            
-            <MobileNavLink href="/schedule" onClick={closeMobileMenu}>Schedule</MobileNavLink>
-            <MobileNavLink href="/dashboard" onClick={closeMobileMenu}>Dashboard</MobileNavLink>
+            {session ? (
+              <>
+                <MobileNavLink href="/" onClick={closeMobileMenu}>Home</MobileNavLink>
+                <MobileNavLink href="/quote" onClick={closeMobileMenu}>Quote</MobileNavLink>
+                
+                {/* Mobile Industry Links */}
+                <div className="ml-4 pl-4 border-l border-slate-700/50 flex flex-col gap-3">
+                  <MobileNavLink 
+                    href="/quote/metal-fabrication" 
+                    onClick={closeMobileMenu}
+                    className="text-base"
+                  >
+                    Metal Fabrication
+                  </MobileNavLink>
+                  <MobileNavLink 
+                    href="/quote/injection-molding" 
+                    onClick={closeMobileMenu}
+                    className="text-base"
+                  >
+                    Injection Molding
+                  </MobileNavLink>
+                  <MobileNavLink 
+                    href="/quote/cnc-machining" 
+                    onClick={closeMobileMenu}
+                    className="text-base"
+                  >
+                    CNC Machining
+                  </MobileNavLink>
+                  <MobileNavLink 
+                    href="/quote/sheet-metal" 
+                    onClick={closeMobileMenu}
+                    className="text-base"
+                  >
+                    Sheet Metal
+                  </MobileNavLink>
+                  <MobileNavLink 
+                    href="/quote/electronics-assembly" 
+                    onClick={closeMobileMenu}
+                    className="text-base"
+                  >
+                    Electronics Assembly
+                  </MobileNavLink>
+                </div>
+                
+                <MobileNavLink href="/schedule" onClick={closeMobileMenu}>Schedule</MobileNavLink>
+                <MobileNavLink href="/dashboard" onClick={closeMobileMenu}>Dashboard</MobileNavLink>
+                <MobileNavLink href="/account/preferences" onClick={closeMobileMenu}>Preferences</MobileNavLink>
+                <button
+                  onClick={() => {
+                    handleSignOut();
+                    closeMobileMenu();
+                  }}
+                  className="min-h-[48px] px-4 py-2 flex items-center text-lg font-medium text-slate-200 hover:text-white hover:bg-slate-800/50 rounded-lg transition-colors duration-200"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <MobileNavLink href="/" onClick={closeMobileMenu}>Home</MobileNavLink>
+                <MobileNavLink href="/products" onClick={closeMobileMenu}>Products</MobileNavLink>
+                <MobileNavLink href="/pricing" onClick={closeMobileMenu}>Pricing</MobileNavLink>
+                <MobileNavLink href="/faq" onClick={closeMobileMenu}>FAQ</MobileNavLink>
+                <MobileNavLink 
+                  href="/signin" 
+                  onClick={closeMobileMenu}
+                  className="text-blue-400 hover:text-blue-300"
+                >
+                  Log In
+                </MobileNavLink>
+                <MobileNavLink 
+                  href="/signup" 
+                  onClick={closeMobileMenu}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Sign Up
+                </MobileNavLink>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -307,7 +415,17 @@ export function HeaderClient() {
   );
 }
 
-function NavLink({ href, children, isScrolled }: { href: string; children: React.ReactNode; isScrolled: boolean }) {
+function NavLink({ 
+  href, 
+  children, 
+  isScrolled,
+  className = ""
+}: { 
+  href: string; 
+  children: React.ReactNode; 
+  isScrolled: boolean;
+  className?: string;
+}) {
   return (
     <Link
       href={href}
@@ -315,7 +433,7 @@ function NavLink({ href, children, isScrolled }: { href: string; children: React
         isScrolled
           ? 'text-slate-200 hover:text-white hover:bg-slate-800/50'
           : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100/80'
-      }`}
+      } ${className}`}
     >
       {children}
     </Link>
