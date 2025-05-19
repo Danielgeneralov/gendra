@@ -1,44 +1,41 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/context/useAuth";
-
-// Force dynamic rendering for this page
 export const dynamic = "force-dynamic";
 
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useAuth } from "@/context/useAuth";
+
 export default function SignIn() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { supabase } = useAuth();
+
+  const [redirectPath, setRedirectPath] = useState("/quote");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
-  const [redirectPath, setRedirectPath] = useState("");
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { supabase } = useAuth();
 
   useEffect(() => {
-    const redirectedFrom = searchParams.get("redirectedFrom") || "/quote";
-    setRedirectPath(redirectedFrom);
+    const redirected = searchParams.get("redirectedFrom");
+    if (redirected) {
+      setRedirectPath(redirected);
+    }
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
+    setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      
       setRedirecting(true);
-      router.push(redirectPath);
+      router.push(redirectPath || "/quote");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to sign in");
+      setError(err instanceof Error ? err.message : "Login failed");
       setRedirecting(false);
     } finally {
       setLoading(false);
@@ -49,12 +46,8 @@ export default function SignIn() {
     <div className="min-h-screen bg-gradient-to-b from-black via-[#050C1C] to-[#0A1828] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-[#0A1828]/50 backdrop-blur-sm rounded-xl p-8 shadow-2xl border border-white/10">
-          <h1 className="text-2xl font-bold text-white mb-2 text-center">
-            Log in to Gendra
-          </h1>
-          <p className="text-gray-400 text-center mb-8">
-            Access your custom quoting tools
-          </p>
+          <h1 className="text-2xl font-bold text-white mb-2 text-center">Log in to Gendra</h1>
+          <p className="text-gray-400 text-center mb-8">Access your custom quoting tools</p>
 
           {redirectPath && redirectPath !== "/quote" && (
             <div className="mb-4 text-sm text-blue-400 text-center">
