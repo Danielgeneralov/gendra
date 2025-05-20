@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { HeaderClient } from "./components/HeaderClient";
+import { ClientProvider } from "@/context/ClientProvider";
 
 export const metadata: Metadata = {
   title: "Gendra",
@@ -15,10 +16,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans antialiased bg-slate-50 text-slate-900">
-        <HeaderClient />
-        <main className="w-full">
-          {children}
-        </main>
+        <ClientProvider>
+          <HeaderClient />
+          <main className="w-full">
+            {children}
+          </main>
+        </ClientProvider>
       </body>
     </html>
   );

@@ -7,5 +7,6 @@ SCHEMA_REGISTRY = {
     "speccoat": SpecCoatSchema(),
 }
 
+
 def get_schema_by_service_type(service_type: str) -> QuoteSchemaBase:
-    return SCHEMA_REGISTRY.get(service_type, MetalFabQuoteSchema()) 
+    return SCHEMA_REGISTRY.get(service_type, MetalFabQuoteSchema())

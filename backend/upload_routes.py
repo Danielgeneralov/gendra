@@ -10,12 +10,13 @@ from supabase_service import supabase_service
 
 router = APIRouter()
 
+
 @router.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     allowed_types = {
         "application/pdf": ".pdf",
         "text/csv": ".csv",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx"
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
     }
 
     if file.content_type not in allowed_types:
@@ -37,10 +38,19 @@ async def upload_file(file: UploadFile = File(...)):
 
         # Ensure required keys for quoting are present after parsing
         required_quote_keys = ["quantity", "complexity", "service_type", "material", "turnaround_days"]
-        if not all(k in parsed_data for k in required_quote_keys):
-            for key in required_quote_keys:
-                if key not in parsed_data:
-                    parsed_data[key] = None
+        for key in required_quote_keys:
+            if key not in parsed_data or parsed_data[key] is None:
+                # Use Daniel's defaults if missing
+                if key == "service_type":
+                    parsed_data[key] = "metal_fab"
+                elif key == "material":
+                    parsed_data[key] = "aluminum"
+                elif key == "quantity":
+                    parsed_data[key] = 1
+                elif key == "complexity":
+                    parsed_data[key] = 1.0
+                elif key == "turnaround_days":
+                    parsed_data[key] = 7
 
         # 💡 Calculate quote using schema-based engine
         quote_amount = None
@@ -55,7 +65,6 @@ async def upload_file(file: UploadFile = File(...)):
             quote_amount = get_quote(quote_input_data)
             parsed_data["quote"] = quote_amount
         except Exception as e:
-            print(f"WARNING: Quote calculation failed for {file.filename}: {str(e)}")
             parsed_data["quote_calculation_error"] = str(e)
 
         # 💾 Save to Supabase (quotes table)
@@ -108,21 +117,14 @@ def parse_spreadsheet(file_path: str) -> dict:
             raise ValueError("Unsupported file type for parsing.")
 
         first_row = df.iloc[0]
-
         parsed_data = {
-            "service_type": str(first_row.get("service_type")),
-            "quantity": first_row.get("quantity"),
-            "material": str(first_row.get("material")),
-            "complexity": first_row.get("complexity"),
-            "turnaround_days": first_row.get("turnaround_days"),
+            "service_type": str(first_row.get("service_type", "metal_fab")),
+            "quantity": int(first_row.get("quantity", 1)) if pd.notna(first_row.get("quantity")) else 1,
+            "material": str(first_row.get("material", "aluminum")),
+            "complexity": float(first_row.get("complexity", 1.0)) if pd.notna(first_row.get("complexity")) else 1.0,
+            "turnaround_days": int(first_row.get("turnaround_days", 7)) if pd.notna(first_row.get("turnaround_days")) else 7,
         }
-
-        parsed_data["quantity"] = int(parsed_data["quantity"]) if pd.notna(parsed_data["quantity"]) else None
-        parsed_data["complexity"] = float(parsed_data["complexity"]) if pd.notna(parsed_data["complexity"]) else None
-        parsed_data["turnaround_days"] = int(parsed_data["turnaround_days"]) if pd.notna(parsed_data["turnaround_days"]) else None
-
         return parsed_data
-
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to parse spreadsheet: {str(e)}")
 
@@ -133,16 +135,14 @@ def parse_pdf(file_path: str) -> dict:
             text = ""
             for page in pdf.pages:
                 text += page.extract_text() or ""
-
         lines = text.lower().splitlines()
         data = {
-            "service_type": None,
-            "quantity": None,
-            "material": None,
-            "complexity": None,
-            "turnaround_days": None,
+            "service_type": "metal_fab",
+            "quantity": 1,
+            "material": "aluminum",
+            "complexity": 1.0,
+            "turnaround_days": 7,
         }
-
         for line in lines:
             if "service type:" in line:
                 data["service_type"] = line.split("service type:")[-1].strip()
@@ -163,12 +163,9 @@ def parse_pdf(file_path: str) -> dict:
                     data["turnaround_days"] = int("".join(filter(str.isdigit, line.split("turnaround days:")[-1])))
                 except ValueError:
                     pass
-
         for key, value in data.items():
             if isinstance(value, str) and value == '':
                 data[key] = None
-
         return data
-
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to parse PDF: {str(e)}")

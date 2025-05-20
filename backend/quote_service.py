@@ -12,6 +12,7 @@ MODEL_PATH = Path(__file__).parent / "model.pkl"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("quote_service")
 
+
 # Load the trained quote prediction model
 def load_model():
     try:
@@ -21,25 +22,27 @@ def load_model():
     except Exception as e:
         raise RuntimeError(f"Error loading quote model: {str(e)}")
 
+
 quote_model = load_model()
 
 # Define multipliers based on material and service type
 MATERIAL_MULTIPLIERS = {
-    'aluminum': 1.0,
-    'steel': 1.2,
-    'plastic': 0.7,
-    'titanium': 3.0,
-    'carbon fiber': 2.5,
-    'default': 1.0
+    "aluminum": 1.0,
+    "steel": 1.2,
+    "plastic": 0.7,
+    "titanium": 3.0,
+    "carbon fiber": 2.5,
+    "default": 1.0,
 }
 
 SERVICE_MULTIPLIERS = {
-    'conformal_coating': 1.0,
-    'parylene': 1.8,
-    'nano_coating': 2.2,
-    'encapsulation': 1.5,
-    'default': 1.0
+    "conformal_coating": 1.0,
+    "parylene": 1.8,
+    "nano_coating": 2.2,
+    "encapsulation": 1.5,
+    "default": 1.0,
 }
+
 
 # Quote generation logic using the model and multipliers
 def get_quote(fields: dict) -> float:
