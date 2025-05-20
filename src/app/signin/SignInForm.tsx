@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/useAuth";
 
 export default function SignInForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { supabase } = useAuth();
+  const { supabase, session } = useAuth();
+  const redirectAttempted = useRef(false);
+  const loginLogged = useRef(false);
 
   const [redirectPath, setRedirectPath] = useState("/quote");
   const [email, setEmail] = useState("");
@@ -16,6 +18,7 @@ export default function SignInForm() {
   const [loading, setLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
 
+  // Get redirect path from URL parameters on component mount
   useEffect(() => {
     const redirected = searchParams.get("redirectedFrom");
     if (redirected) {
@@ -23,19 +26,76 @@ export default function SignInForm() {
     }
   }, [searchParams]);
 
+  // Log the login attempt to the database
+  const logLoginAttempt = async (userId: string, userEmail: string) => {
+    if (loginLogged.current) return;
+    
+    try {
+      const { error } = await supabase.from('logins').insert({
+        user_id: userId,
+        email: userEmail,
+      });
+      
+      if (error) {
+        console.error('Failed to log login attempt:', error);
+      } else {
+        loginLogged.current = true;
+      }
+    } catch (err) {
+      console.error('Error logging login attempt:', err);
+    }
+  };
+
+  // Handle successful authentication and redirect
+  const handleSuccessfulAuth = useCallback(() => {
+    if (redirectAttempted.current) return;
+    redirectAttempted.current = true;
+    
+    setRedirecting(true);
+    
+    // Use setTimeout to ensure the redirect happens after state updates
+    setTimeout(() => {
+      router.push(redirectPath || "/quote");
+    }, 100);
+  }, [router, redirectPath]);
+
+  // Check for existing session and redirect if already logged in
+  useEffect(() => {
+    if (session && !redirecting && !redirectAttempted.current) {
+      handleSuccessfulAuth();
+    }
+  }, [session, redirecting, handleSuccessfulAuth]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+    
     setLoading(true);
     setError(null);
+    redirectAttempted.current = false;
+    loginLogged.current = false;
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error, data } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      });
+      
       if (error) throw error;
-      setRedirecting(true);
-      router.push(redirectPath || "/quote");
+      
+      // Log the successful login
+      if (data?.session?.user) {
+        await logLoginAttempt(data.session.user.id, data.session.user.email || email);
+      }
+      
+      // Only trigger redirect if we have a valid session
+      if (data?.session) {
+        handleSuccessfulAuth();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
       setRedirecting(false);
+      redirectAttempted.current = false;
     } finally {
       setLoading(false);
     }
