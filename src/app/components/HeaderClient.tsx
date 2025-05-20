@@ -257,6 +257,13 @@ export function HeaderClient() {
                 {isAccountMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 py-2 bg-slate-800 rounded-md shadow-lg ring-1 ring-slate-700 focus:outline-none origin-top-right animate-in fade-in slide-in-from-top-2 duration-200">
                     <Link 
+                      href="/account/onboarding" 
+                      className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700"
+                      onClick={() => setIsAccountMenuOpen(false)}
+                    >
+                      Customize Portal
+                    </Link>
+                    <Link 
                       href="/account/preferences" 
                       className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700"
                       onClick={() => setIsAccountMenuOpen(false)}
@@ -383,6 +390,7 @@ export function HeaderClient() {
                 
                 <MobileNavLink href="/schedule" onClick={closeMobileMenu}>Schedule</MobileNavLink>
                 <MobileNavLink href="/dashboard" onClick={closeMobileMenu}>Dashboard</MobileNavLink>
+                <MobileNavLink href="/account/onboarding" onClick={closeMobileMenu}>Customize Portal</MobileNavLink>
                 <MobileNavLink href="/account/preferences" onClick={closeMobileMenu}>Preferences</MobileNavLink>
                 <button
                   onClick={() => {
