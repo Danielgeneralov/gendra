@@ -7,7 +7,9 @@ starlette==0.36.3
 python-dotenv==1.0.1
 
 # Supabase client
-supabase==2.3.0
+supabase==1.2.0
+httpx==0.24.1
+httpcore==0.17.3 
 
 # PDF and Excel parsing
 pdfminer.six==20221105
@@ -53,6 +55,3 @@ typing_extensions==4.13.2
 
 # Optional (debug, linting, logging helpers)
 # loguru==0.7.2
-
-httpx==0.24.1
-httpcore==0.17.3 
