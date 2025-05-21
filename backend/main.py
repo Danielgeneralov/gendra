@@ -14,52 +14,24 @@ from client_config import get_client_config
 from quote_logger import log_quote_to_supabase
 import sys
 
-# Add this print statement to see if the script is even starting here
-print("DEBUG: Script execution reached the very top of main.py")
-
 # Load environment variables from .env file
-# First, try to find using find_dotenv (searches up the directory tree)
 dotenv_file_path = find_dotenv()
-
-# If find_dotenv doesn't find it, specify the expected location relative to this file
 if not dotenv_file_path:
-    # Convert Path object to string before assigning to dotenv_file_path if needed
     dotenv_file_path = str(Path(__file__).parent / ".env")
-
-# Check if the file actually exists before attempting to load
 if dotenv_file_path and os.path.exists(dotenv_file_path):
-    print(f"DEBUG: Attempting to load .env from: {os.path.abspath(dotenv_file_path)}")
     load_dotenv(dotenv_file_path, override=True)
-else:
-    print(f"DEBUG: .env file not found at expected path: {os.path.abspath(dotenv_file_path) if dotenv_file_path else 'None'}")
-    # Decide how to handle this case - maybe raise an error or just log a warning
 
-# Debug: Print current working directory
-print(f"DEBUG: Current working directory: {os.getcwd()}")
-
-# Debug: List all files in current directory
-print("DEBUG: Files in current directory:")
-for file in os.listdir():
-    print(f"  - {file}")
-
-# Debugging: Print environment variables after loading
-print(f"DEBUG: NEXT_PUBLIC_SUPABASE_URL: {os.getenv('NEXT_PUBLIC_SUPABASE_URL')}")
-print(f"DEBUG: SUPABASE_SERVICE_ROLE_KEY: {os.getenv('SUPABASE_SERVICE_ROLE_KEY')}")
-
-# ✅ Enhanced logging configuration
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("gendra-backend")
 
-# ✅ FastAPI app init
 app = FastAPI()
 
-# ✅ CORS configuration (includes production domain)
 origins = [
     "http://localhost:3000",
     "https://gendra-beryl.vercel.app",
-    "https://www.gogendra.com",  # ✅ Your live frontend
+    "https://www.gogendra.com",
 ]
 
 app.add_middleware(
@@ -72,8 +44,6 @@ app.add_middleware(
     max_age=600,
 )
 
-
-# ✅ Middleware for detailed request logging
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     logger.info(f"Incoming {request.method} request to {request.url}")
@@ -85,19 +55,13 @@ async def log_requests(request: Request, call_next):
     logger.info(f"Response headers: {response.headers}")
     return response
 
-
-# ✅ Optional: respond to unexpected OPTIONS explicitly
 @app.options("/{rest_of_path:path}")
 async def preflight_handler(rest_of_path: str):
     logger.info(f"OPTIONS preflight request to /{rest_of_path}")
     return Response(status_code=200)
 
-
-# ✅ Include upload routes
 app.include_router(upload_router)
 
-
-# ✅ Schema for quote input
 class QuoteRequest(BaseModel):
     service_type: str
     material: str
@@ -108,7 +72,6 @@ class QuoteRequest(BaseModel):
     customer_name: Optional[str]
     company_name: Optional[str]
     additional_notes: Optional[str]
-
     class Config:
         json_schema_extra = {
             "example": {
@@ -120,13 +83,10 @@ class QuoteRequest(BaseModel):
             }
         }
 
-
-# ✅ Schema for quote output
 class QuoteResponse(BaseModel):
     quote: float
     quote_id: str
 
-# ✅ Schema for lead request
 class LeadRequest(BaseModel):
     email: EmailStr
     name: Optional[str]
@@ -136,7 +96,6 @@ class LeadRequest(BaseModel):
     message: Optional[str]
     source: Optional[str]
 
-# ✅ Schema for user registration
 class UserRegistration(BaseModel):
     email: EmailStr
     full_name: Optional[str]
@@ -144,7 +103,6 @@ class UserRegistration(BaseModel):
     role: Optional[str] = "user"
     subscription_status: Optional[str] = "free"
 
-# ✅ Schema for portal config
 class PortalConfig(BaseModel):
     company_id: str
     company_name: str
@@ -155,20 +113,16 @@ class PortalConfig(BaseModel):
     features: Optional[Dict[str, Any]]
     settings: Optional[Dict[str, Any]]
 
-
-# ✅ Schema for client setup request
 class BrandingConfig(BaseModel):
     theme_name: str
     logo_url: Optional[str] = None
     colors: Dict[str, str]
-
 
 class ClientSetupRequest(BaseModel):
     client_id: str
     branding: BrandingConfig
     visible_fields: List[str]
     quote_schema: Dict[str, Any]
-
     class Config:
         json_schema_extra = {
             "example": {
@@ -187,52 +141,33 @@ class ClientSetupRequest(BaseModel):
             }
         }
 
-
-# ✅ Client setup endpoint
 @app.post("/setup-client", status_code=201)
 async def setup_client(request: Request, setup_req: ClientSetupRequest):
     try:
-        logger.info(
-            f"Processing client setup request for client_id: {setup_req.client_id}"
-        )
+        logger.info(f"Processing client setup request for client_id: {setup_req.client_id}")
         logger.info(f"Request body: {await request.json()}")
-
-        # Prepare data for insertion
         client_data = {
             "client_id": setup_req.client_id,
             "branding": setup_req.branding.dict(),
             "visible_fields": setup_req.visible_fields,
             "quote_schema": setup_req.quote_schema,
         }
-
-        # Insert into Supabase
         try:
             response = supabase_service.supabase.table("client_configs").upsert(client_data).execute()
             if not response.data:
                 logger.error("Failed to insert client config into Supabase")
-                raise HTTPException(
-                    status_code=500, detail="Failed to store client configuration"
-                )
-
-            logger.info(
-                f"Successfully stored configuration for client: {setup_req.client_id}"
-            )
-            return {
-                "message": "Client configuration created successfully",
-                "client_id": setup_req.client_id,
-            }
-
+                raise HTTPException(status_code=500, detail="Failed to store client configuration")
+            logger.info(f"Successfully stored configuration for client: {setup_req.client_id}")
+            return {"message": "Client configuration created successfully", "client_id": setup_req.client_id}
         except Exception as e:
             logger.error(f"Supabase error: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-
     except ValueError as e:
         logger.error(f"Validation error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Unexpected error during client setup: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to setup client: {str(e)}")
-
 
 # ✅ Health check
 @app.get("/")
@@ -242,9 +177,13 @@ async def root():
 
 # ✅ Prediction route with schema-based logic and client configuration
 @app.post("/predict-quote", response_model=QuoteResponse)
-async def predict_quote(request: Request, quote_req: QuoteRequest, x_client_id: Optional[str] = Header(None)):
+async def predict_quote(
+    request: Request, quote_req: QuoteRequest, x_client_id: Optional[str] = Header(None)
+):
     try:
-        logger.info(f"Processing quote request for service_type: {quote_req.service_type}")
+        logger.info(
+            f"Processing quote request for service_type: {quote_req.service_type}"
+        )
         logger.info(f"Request body: {await request.json()}")
         logger.info(f"Client ID from header: {x_client_id}")
         client_config = None
@@ -260,14 +199,16 @@ async def predict_quote(request: Request, quote_req: QuoteRequest, x_client_id: 
         if not quote_req.service_type:
             raise HTTPException(status_code=400, detail="service_type is required")
         quote_schema = client_config.get("quote_schema") if client_config else None
-        quote = get_quote({
-            "service_type": quote_req.service_type,
-            "material": quote_req.material,
-            "quantity": quote_req.quantity,
-            "complexity": quote_req.complexity,
-            "turnaround_days": quote_req.turnaround_days,
-            "quote_schema": quote_schema,
-        })
+        quote = get_quote(
+            {
+                "service_type": quote_req.service_type,
+                "material": quote_req.material,
+                "quantity": quote_req.quantity,
+                "complexity": quote_req.complexity,
+                "turnaround_days": quote_req.turnaround_days,
+                "quote_schema": quote_schema,
+            }
+        )
         quote_id = str(uuid.uuid4())
         # Save to Supabase
         quote_data = {
@@ -303,7 +244,9 @@ async def predict_quote(request: Request, quote_req: QuoteRequest, x_client_id: 
         return {"quote": quote, "quote_id": saved_quote["id"]}
     except Exception as e:
         logger.error(f"Quote calculation error: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to generate quote: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to generate quote: {str(e)}"
+        )
 
 # ✅ Lead capture
 @app.post("/capture-lead")
@@ -375,7 +318,6 @@ async def get_configuration(
             status_code=500,
             detail="Internal server error while fetching client configuration",
         )
-
 
 if __name__ == "__main__":
     import uvicorn
