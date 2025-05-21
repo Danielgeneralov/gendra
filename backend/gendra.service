@@ -1,0 +1,14 @@
+[Unit]
+Description=Gendra Backend Service
+After=network.target
+
+[Service]
+User=YOUR_USERNAME
+Group=YOUR_GROUP
+WorkingDirectory=/path/to/gendra/backend
+Environment="PATH=/path/to/your/venv/bin"
+ExecStart=/path/to/your/venv/bin/gunicorn -c gunicorn_config.py main:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target 

@@ -7,7 +7,7 @@ starlette==0.36.3
 python-dotenv==1.0.1
 
 # Supabase client
-supabase==1.0.3
+supabase==2.3.0
 
 # PDF and Excel parsing
 pdfminer.six==20221105

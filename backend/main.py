@@ -1,28 +1,37 @@
-from fastapi import FastAPI, HTTPException, Request, Response, Header
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Request, Response, Header, Depends
+from pydantic import BaseModel, EmailStr
 from typing import Optional, List, Dict, Any
 from fastapi.middleware.cors import CORSMiddleware
 import logging
+import os
 import uuid
+from dotenv import load_dotenv, find_dotenv
+from pathlib import Path
 from upload_routes import router as upload_router
-from quote_service import get_quote, quote_model
-from client_config import get_client_config, supabase
+from quote_service import get_quote
+from supabase_service import supabase_service
+from client_config import get_client_config
 from quote_logger import log_quote_to_supabase
+import sys
 
-# ✅ Enhanced logging configuration
+# Load environment variables from .env file
+dotenv_file_path = find_dotenv()
+if not dotenv_file_path:
+    dotenv_file_path = str(Path(__file__).parent / ".env")
+if dotenv_file_path and os.path.exists(dotenv_file_path):
+    load_dotenv(dotenv_file_path, override=True)
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("gendra-backend")
 
-# ✅ FastAPI app init
 app = FastAPI()
 
-# ✅ CORS configuration (includes production domain)
 origins = [
     "http://localhost:3000",
     "https://gendra-beryl.vercel.app",
-    "https://www.gogendra.com",  # ✅ Your live frontend
+    "https://www.gogendra.com",
 ]
 
 app.add_middleware(
@@ -35,8 +44,6 @@ app.add_middleware(
     max_age=600,
 )
 
-
-# ✅ Middleware for detailed request logging
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     logger.info(f"Incoming {request.method} request to {request.url}")
@@ -48,26 +55,23 @@ async def log_requests(request: Request, call_next):
     logger.info(f"Response headers: {response.headers}")
     return response
 
-
-# ✅ Optional: respond to unexpected OPTIONS explicitly
 @app.options("/{rest_of_path:path}")
 async def preflight_handler(rest_of_path: str):
     logger.info(f"OPTIONS preflight request to /{rest_of_path}")
     return Response(status_code=200)
 
-
-# ✅ Include upload routes
 app.include_router(upload_router)
 
-
-# ✅ Schema for quote input
 class QuoteRequest(BaseModel):
     service_type: str
     material: str
     quantity: int
     complexity: Optional[float] = 1.0
     turnaround_days: Optional[int] = 7
-
+    customer_email: Optional[EmailStr]
+    customer_name: Optional[str]
+    company_name: Optional[str]
+    additional_notes: Optional[str]
     class Config:
         json_schema_extra = {
             "example": {
@@ -79,26 +83,46 @@ class QuoteRequest(BaseModel):
             }
         }
 
-
-# ✅ Schema for quote output
 class QuoteResponse(BaseModel):
     quote: float
-    client_branding: Optional[dict] = None
+    quote_id: str
 
+class LeadRequest(BaseModel):
+    email: EmailStr
+    name: Optional[str]
+    company_name: Optional[str]
+    phone: Optional[str]
+    interest_type: str
+    message: Optional[str]
+    source: Optional[str]
 
-# ✅ Schema for client setup request
+class UserRegistration(BaseModel):
+    email: EmailStr
+    full_name: Optional[str]
+    company_name: Optional[str]
+    role: Optional[str] = "user"
+    subscription_status: Optional[str] = "free"
+
+class PortalConfig(BaseModel):
+    company_id: str
+    company_name: str
+    logo_url: Optional[str]
+    primary_color: Optional[str]
+    secondary_color: Optional[str]
+    custom_domain: Optional[str]
+    features: Optional[Dict[str, Any]]
+    settings: Optional[Dict[str, Any]]
+
 class BrandingConfig(BaseModel):
     theme_name: str
     logo_url: Optional[str] = None
     colors: Dict[str, str]
-
 
 class ClientSetupRequest(BaseModel):
     client_id: str
     branding: BrandingConfig
     visible_fields: List[str]
     quote_schema: Dict[str, Any]
-
     class Config:
         json_schema_extra = {
             "example": {
@@ -117,45 +141,27 @@ class ClientSetupRequest(BaseModel):
             }
         }
 
-
-# ✅ Client setup endpoint
 @app.post("/setup-client", status_code=201)
 async def setup_client(request: Request, setup_req: ClientSetupRequest):
     try:
-        logger.info(
-            f"Processing client setup request for client_id: {setup_req.client_id}"
-        )
+        logger.info(f"Processing client setup request for client_id: {setup_req.client_id}")
         logger.info(f"Request body: {await request.json()}")
-
-        # Prepare data for insertion
         client_data = {
             "client_id": setup_req.client_id,
             "branding": setup_req.branding.dict(),
             "visible_fields": setup_req.visible_fields,
             "quote_schema": setup_req.quote_schema,
         }
-
-        # Insert into Supabase
         try:
-            response = supabase.table("client_configs").upsert(client_data).execute()
+            response = supabase_service.supabase.table("client_configs").upsert(client_data).execute()
             if not response.data:
                 logger.error("Failed to insert client config into Supabase")
-                raise HTTPException(
-                    status_code=500, detail="Failed to store client configuration"
-                )
-
-            logger.info(
-                f"Successfully stored configuration for client: {setup_req.client_id}"
-            )
-            return {
-                "message": "Client configuration created successfully",
-                "client_id": setup_req.client_id,
-            }
-
+                raise HTTPException(status_code=500, detail="Failed to store client configuration")
+            logger.info(f"Successfully stored configuration for client: {setup_req.client_id}")
+            return {"message": "Client configuration created successfully", "client_id": setup_req.client_id}
         except Exception as e:
             logger.error(f"Supabase error: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-
     except ValueError as e:
         logger.error(f"Validation error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
@@ -163,13 +169,11 @@ async def setup_client(request: Request, setup_req: ClientSetupRequest):
         logger.error(f"Unexpected error during client setup: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to setup client: {str(e)}")
 
-
 # ✅ Health check
 @app.get("/")
 async def root():
     logger.info("Health check endpoint called")
     return {"message": "Gendra backend is running"}
-
 
 # ✅ Prediction route with schema-based logic and client configuration
 @app.post("/predict-quote", response_model=QuoteResponse)
@@ -182,8 +186,6 @@ async def predict_quote(
         )
         logger.info(f"Request body: {await request.json()}")
         logger.info(f"Client ID from header: {x_client_id}")
-
-        # Get client configuration if client ID is provided
         client_config = None
         if x_client_id:
             try:
@@ -191,20 +193,12 @@ async def predict_quote(
                 logger.info(f"Using configuration for client: {x_client_id}")
             except ValueError as e:
                 logger.warning(f"Client config not found: {str(e)}")
-                # Continue with default configuration
             except Exception as e:
                 logger.error(f"Error fetching client config: {str(e)}")
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Error fetching client configuration: {str(e)}",
-                )
-
+                raise HTTPException(status_code=500, detail=f"Error fetching client configuration: {str(e)}")
         if not quote_req.service_type:
             raise HTTPException(status_code=400, detail="service_type is required")
-
-        # Apply client-specific quote schema if available
         quote_schema = client_config.get("quote_schema") if client_config else None
-
         quote = get_quote(
             {
                 "service_type": quote_req.service_type,
@@ -212,19 +206,26 @@ async def predict_quote(
                 "quantity": quote_req.quantity,
                 "complexity": quote_req.complexity,
                 "turnaround_days": quote_req.turnaround_days,
-                "quote_schema": quote_schema,  # Pass schema to quote service
+                "quote_schema": quote_schema,
             }
         )
-
-        # Generate quote ID for logging
         quote_id = str(uuid.uuid4())
-
-        # Prepare response
-        response = {
-            "quote": quote,
-            "client_branding": client_config.get("branding") if client_config else None,
+        # Save to Supabase
+        quote_data = {
+            "service_type": quote_req.service_type,
+            "material": quote_req.material,
+            "quantity": quote_req.quantity,
+            "complexity": quote_req.complexity,
+            "turnaround_days": quote_req.turnaround_days,
+            "quote_amount": quote,
+            "customer_email": quote_req.customer_email,
+            "customer_name": quote_req.customer_name,
+            "company_name": quote_req.company_name,
+            "additional_notes": quote_req.additional_notes,
+            "client_id": x_client_id,
+            "quote_id": quote_id
         }
-
+        saved_quote = await supabase_service.save_quote(quote_data)
         # Log the quote non-blockingly
         try:
             log_quote_to_supabase(
@@ -240,16 +241,45 @@ async def predict_quote(
             )
         except Exception as e:
             logger.warning(f"Quote logging failed (non-critical): {str(e)}")
-            # Continue with response regardless of logging failure
-
-        return response
-
+        return {"quote": quote, "quote_id": saved_quote["id"]}
     except Exception as e:
         logger.error(f"Quote calculation error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail=f"Failed to generate quote: {str(e)}"
         )
 
+# ✅ Lead capture
+@app.post("/capture-lead")
+async def capture_lead(request: LeadRequest):
+    try:
+        lead_data = request.dict()
+        saved_lead = await supabase_service.save_lead(lead_data)
+        return {"status": "success", "lead_id": saved_lead["id"]}
+    except Exception as e:
+        logger.error(f"Lead capture error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to capture lead")
+
+# ✅ User registration
+@app.post("/register-user")
+async def register_user(request: UserRegistration):
+    try:
+        user_data = request.dict()
+        saved_user = await supabase_service.create_user(user_data)
+        return {"status": "success", "user_id": saved_user["id"]}
+    except Exception as e:
+        logger.error(f"User registration error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to register user")
+
+# ✅ Portal configuration
+@app.post("/save-portal-config")
+async def save_portal_config(request: PortalConfig):
+    try:
+        config_data = request.dict()
+        saved_config = await supabase_service.save_portal_config(config_data)
+        return {"status": "success", "config_id": saved_config["id"]}
+    except Exception as e:
+        logger.error(f"Portal config error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to save portal configuration")
 
 # ✅ Client config route
 @app.get("/client-config")
@@ -288,7 +318,6 @@ async def get_configuration(
             status_code=500,
             detail="Internal server error while fetching client configuration",
         )
-
 
 if __name__ == "__main__":
     import uvicorn
