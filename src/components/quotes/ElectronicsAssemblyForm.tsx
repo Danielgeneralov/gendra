@@ -15,6 +15,10 @@ type FormData = {
   complexity: 'low' | 'medium' | 'high';
   turntime: string;
   deadline: string;
+  customerEmail?: string;
+  customerName?: string;
+  companyName?: string;
+  additionalNotes?: string;
 };
 
 // Configure the API endpoint 
@@ -246,13 +250,10 @@ export default function ElectronicsAssemblyForm() {
       
       // Prepare the request body with required backend fields
       const requestBody = {
-        // Required fields for schema-based dispatch
         service_type: SERVICE_TYPE,
         material: formData.assemblyType, // Using assembly type as material type
         quantity: formData.quantity,
         complexity: complexityValue,
-        
-        // Additional parameters for electronics assembly
         component_count: formData.componentCount,
         board_layers: formData.boardLayers,
         assembly_options: {
@@ -261,9 +262,11 @@ export default function ElectronicsAssemblyForm() {
           testing: formData.testingRequired
         },
         turnaround_time: formData.turntime,
-        
-        // Optional metadata
-        requested_deadline: formData.deadline || null
+        requested_deadline: formData.deadline || null,
+        customer_email: formData.customerEmail || "",
+        customer_name: formData.customerName || "",
+        company_name: formData.companyName || "",
+        additional_notes: formData.additionalNotes || ""
       };
       
       console.log('Sending request to backend:', requestBody);
@@ -383,6 +386,7 @@ export default function ElectronicsAssemblyForm() {
                 value={formData.assemblyType}
                 onChange={handleInputChange}
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Select assembly type"
               >
                 <option value="pcba">PCB Assembly (PCBA)</option>
                 <option value="cable-harness">Cable/Harness Assembly</option>
@@ -401,6 +405,8 @@ export default function ElectronicsAssemblyForm() {
                 onChange={handleInputChange}
                 min="1"
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Enter quantity"
+                placeholder="Enter quantity"
               />
             </div>
             
@@ -415,6 +421,8 @@ export default function ElectronicsAssemblyForm() {
                 onChange={handleInputChange}
                 min="0"
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Enter component count"
+                placeholder="Component count"
               />
             </div>
             
@@ -427,6 +435,7 @@ export default function ElectronicsAssemblyForm() {
                 value={formData.boardLayers}
                 onChange={handleInputChange}
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Select board layers"
               >
                 <option value="2">2 Layer</option>
                 <option value="4">4 Layer</option>
@@ -486,6 +495,7 @@ export default function ElectronicsAssemblyForm() {
                 value={formData.complexity}
                 onChange={handleInputChange}
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Select assembly complexity"
               >
                 <option value="low">Low - Simple assembly, few components</option>
                 <option value="medium">Medium - Moderate complexity</option>
@@ -502,6 +512,7 @@ export default function ElectronicsAssemblyForm() {
                 value={formData.turntime}
                 onChange={handleInputChange}
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Select turn time"
               >
                 <option value="standard">Standard (15+ days)</option>
                 <option value="expedited">Expedited (8-14 days)</option>
@@ -519,6 +530,8 @@ export default function ElectronicsAssemblyForm() {
                 value={formData.deadline}
                 onChange={handleInputChange}
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Select deadline"
+                placeholder="Deadline"
               />
             </div>
           </div>

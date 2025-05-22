@@ -13,6 +13,9 @@ type FormData = {
   surfaceFinish: string;
   colorMatching: boolean;
   deadline: string;
+  length: number;
+  width: number;
+  height: number;
 };
 
 // Configure the API endpoint 
@@ -34,6 +37,9 @@ export default function InjectionMoldingForm() {
     surfaceFinish: 'standard',
     colorMatching: false,
     deadline: '',
+    length: 0,
+    width: 0,
+    height: 0,
   });
   
   const [showQuote, setShowQuote] = useState(false);
@@ -347,6 +353,7 @@ export default function InjectionMoldingForm() {
                 value={formData.material}
                 onChange={handleInputChange}
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Select material"
               >
                 <option value="abs">ABS</option>
                 <option value="polypropylene">Polypropylene (PP)</option>
@@ -366,9 +373,10 @@ export default function InjectionMoldingForm() {
                 name="quantity"
                 value={formData.quantity}
                 onChange={handleInputChange}
-                min="500"
-                step="100"
+                min="1"
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Enter quantity"
+                placeholder="Enter quantity"
               />
             </div>
             
@@ -384,6 +392,8 @@ export default function InjectionMoldingForm() {
                 step="0.1"
                 min="0"
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Enter part volume in cubic centimeters"
+                placeholder="Part volume (cm³)"
               />
             </div>
             
@@ -399,6 +409,8 @@ export default function InjectionMoldingForm() {
                 step="0.1"
                 min="0"
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Enter part weight in grams"
+                placeholder="Part weight (g)"
               />
             </div>
             
@@ -411,6 +423,7 @@ export default function InjectionMoldingForm() {
                 value={formData.complexity}
                 onChange={handleInputChange}
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Select complexity"
               >
                 <option value="low">Low - Simple geometry, few features</option>
                 <option value="medium">Medium - Multiple features, moderate complexity</option>
@@ -427,6 +440,7 @@ export default function InjectionMoldingForm() {
                 value={formData.surfaceFinish}
                 onChange={handleInputChange}
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Select surface finish"
               >
                 <option value="standard">Standard</option>
                 <option value="textured">Textured</option>
@@ -459,6 +473,59 @@ export default function InjectionMoldingForm() {
                 value={formData.deadline}
                 onChange={handleInputChange}
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Select deadline"
+                placeholder="Deadline"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-[#E2E8F0] text-sm font-medium mb-2">
+                Length (mm)
+              </label>
+              <input
+                type="number"
+                name="length"
+                value={formData.length}
+                onChange={handleInputChange}
+                min="0"
+                step="0.1"
+                className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Enter length in mm"
+                placeholder="Length (mm)"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-[#E2E8F0] text-sm font-medium mb-2">
+                Width (mm)
+              </label>
+              <input
+                type="number"
+                name="width"
+                value={formData.width}
+                onChange={handleInputChange}
+                min="0"
+                step="0.1"
+                className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Enter width in mm"
+                placeholder="Width (mm)"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-[#E2E8F0] text-sm font-medium mb-2">
+                Height (mm)
+              </label>
+              <input
+                type="number"
+                name="height"
+                value={formData.height}
+                onChange={handleInputChange}
+                min="0"
+                step="0.1"
+                className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Enter height in mm"
+                placeholder="Height (mm)"
               />
             </div>
           </div>

@@ -14,6 +14,10 @@ type FormData = {
   surfaceFinish: string;
   complexity: 'low' | 'medium' | 'high';
   deadline: string;
+  customerEmail?: string;
+  customerName?: string;
+  companyName?: string;
+  additionalNotes?: string;
 };
 
 // Configure the API endpoint 
@@ -234,13 +238,10 @@ export default function CNCMachiningForm() {
       
       // Prepare the request body with required backend fields
       const requestBody = {
-        // Required fields for schema-based dispatch
         service_type: SERVICE_TYPE,
         material: formData.material,
         quantity: formData.quantity,
         complexity: complexityValue,
-        
-        // Additional parameters for CNC-specific calculation
         dimensions: {
           length: formData.length,
           width: formData.width,
@@ -248,9 +249,11 @@ export default function CNCMachiningForm() {
         },
         tolerance: formData.tolerance,
         surface_finish: formData.surfaceFinish,
-        
-        // Optional metadata
-        requested_deadline: formData.deadline || null
+        requested_deadline: formData.deadline || null,
+        customer_email: formData.customerEmail || "",
+        customer_name: formData.customerName || "",
+        company_name: formData.companyName || "",
+        additional_notes: formData.additionalNotes || ""
       };
       
       console.log('Sending request to backend:', requestBody);
@@ -361,6 +364,7 @@ export default function CNCMachiningForm() {
                 value={formData.material}
                 onChange={handleInputChange}
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Select material"
               >
                 <option value="aluminum">Aluminum</option>
                 <option value="steel">Steel</option>
@@ -381,6 +385,8 @@ export default function CNCMachiningForm() {
                 onChange={handleInputChange}
                 min="1"
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Enter quantity"
+                placeholder="Enter quantity"
               />
             </div>
             
@@ -396,6 +402,8 @@ export default function CNCMachiningForm() {
                 min="0"
                 step="0.1"
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Enter length in mm"
+                placeholder="Length (mm)"
               />
             </div>
             
@@ -411,6 +419,8 @@ export default function CNCMachiningForm() {
                 min="0"
                 step="0.1"
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Enter width in mm"
+                placeholder="Width (mm)"
               />
             </div>
             
@@ -426,6 +436,8 @@ export default function CNCMachiningForm() {
                 min="0"
                 step="0.1"
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Enter height in mm"
+                placeholder="Height (mm)"
               />
             </div>
             
@@ -438,6 +450,7 @@ export default function CNCMachiningForm() {
                 value={formData.tolerance}
                 onChange={handleInputChange}
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Select tolerance"
               >
                 <option value="standard">Standard (±0.2mm)</option>
                 <option value="tight">Tight (±0.1mm)</option>
@@ -454,6 +467,7 @@ export default function CNCMachiningForm() {
                 value={formData.surfaceFinish}
                 onChange={handleInputChange}
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Select surface finish"
               >
                 <option value="standard">Standard Machined</option>
                 <option value="polished">Polished</option>
@@ -470,6 +484,7 @@ export default function CNCMachiningForm() {
                 value={formData.complexity}
                 onChange={handleInputChange}
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Select complexity"
               >
                 <option value="low">Low - Simple geometry, few features</option>
                 <option value="medium">Medium - Multiple features, moderate complexity</option>
@@ -487,6 +502,8 @@ export default function CNCMachiningForm() {
                 value={formData.deadline}
                 onChange={handleInputChange}
                 className="w-full bg-[#141F30] border border-[#24334A] rounded-md py-2 px-3 text-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#4A6FA6] focus:border-transparent"
+                title="Select deadline"
+                placeholder="Deadline"
               />
             </div>
           </div>

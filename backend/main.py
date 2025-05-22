@@ -68,10 +68,10 @@ class QuoteRequest(BaseModel):
     quantity: int
     complexity: Optional[float] = 1.0
     turnaround_days: Optional[int] = 7
-    customer_email: Optional[EmailStr]
-    customer_name: Optional[str]
-    company_name: Optional[str]
-    additional_notes: Optional[str]
+    customer_email: Optional[EmailStr] = None
+    customer_name: Optional[str] = None
+    company_name: Optional[str] = None
+    additional_notes: Optional[str] = None
     class Config:
         json_schema_extra = {
             "example": {
