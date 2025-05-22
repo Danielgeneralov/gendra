@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class SupabaseService:
     def __init__(self):
         self.supabase_url = os.getenv("SUPABASE_URL")
-        self.supabase_key = os.getenv("SUPABASE_KEY")
+        self.supabase_key = os.getenv("SUPABASE_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         
         # Debug logging
         logger.info(f"Supabase URL: {self.supabase_url}")
