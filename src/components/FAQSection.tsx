@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { FAQ } from '@/lib/industryFaqs';
 import StructuredData from './SEO/StructuredData';
