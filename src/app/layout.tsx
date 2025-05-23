@@ -4,6 +4,7 @@ import { HeaderClient } from "./components/HeaderClient";
 import { ClientProvider } from "@/context/ClientProvider";
 import { Inter } from 'next/font/google';
 import StructuredData from "@/components/SEO/StructuredData";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // Initialize fonts
 const inter = Inter({
@@ -93,6 +94,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="font-sans antialiased bg-slate-50 text-slate-900">
+        <SpeedInsights />
         <StructuredData data={organizationStructuredData} />
         <ClientProvider>
           <HeaderClient />
