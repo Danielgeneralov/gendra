@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   reactStrictMode: true,
   logging: {
@@ -10,6 +12,10 @@ const nextConfig = {
     // Add support for PDF.js worker
     config.resolve.alias.canvas = false;
     config.resolve.alias.encoding = false;
+    
+    // Explicitly add path aliases
+    config.resolve.alias['@'] = path.join(__dirname, 'src');
+    config.resolve.alias['@/lib'] = path.join(__dirname, 'src/lib');
     
     // Fix issues with PDF.js in Next.js
     if (!isServer) {

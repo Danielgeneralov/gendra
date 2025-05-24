@@ -2,9 +2,12 @@
 
 import { useFormContext } from "react-hook-form";
 import { motion } from "framer-motion";
-import { INDUSTRY_REGISTRY } from "@/lib/industryRegistry";
 import type { OnboardingFormData } from "../OnboardingWizard";
 import { CheckIcon, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
+
+// Import IndustryConfig type without importing the actual registry
+import type { IndustryConfig } from "@/lib/industryRegistry";
 
 type Step4Props = {
   onSubmit: () => void;
@@ -15,10 +18,28 @@ type Step4Props = {
 export default function Step4Preview({ onSubmit, prevStep, isSubmitting }: Step4Props) {
   const { watch } = useFormContext<OnboardingFormData>();
   const formData = watch();
+  const [industryConfig, setIndustryConfig] = useState<IndustryConfig | null>(null);
   
   // Get the selected industry
   const industry = formData.industry;
-  const industryConfig = INDUSTRY_REGISTRY[industry];
+  
+  // Load the industry registry dynamically
+  useEffect(() => {
+    async function loadIndustryConfig() {
+      try {
+        // Dynamically import the registry
+        const registry = await import("@/lib/industryRegistry");
+        const config = registry.INDUSTRY_REGISTRY[industry];
+        setIndustryConfig(config || null);
+      } catch (error) {
+        console.error("Error loading industry registry:", error);
+      }
+    }
+    
+    if (industry) {
+      loadIndustryConfig();
+    }
+  }, [industry]);
   
   // Get the selected settings
   const { currency, units, rounding, fileFormat } = formData.settings;
