@@ -5,8 +5,9 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "framer-motion";
 
-// Register ScrollTrigger plugin
-if (typeof window !== "undefined") {
+// Register ScrollTrigger plugin only on client side
+const isClient = typeof window !== "undefined";
+if (isClient) {
   gsap.registerPlugin(ScrollTrigger);
 }
 
@@ -37,7 +38,7 @@ export function InsightsMetrics() {
 
   // Initialize GSAP animations
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!isClient) return;
     
     const metrics = metricsRef.current;
     const chart = chartRef.current;

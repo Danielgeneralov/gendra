@@ -1,4 +1,9 @@
+# *
 User-agent: *
 Allow: /
 
+# Host
+Host: https://www.gogendra.com
+
+# Sitemaps
 Sitemap: https://www.gogendra.com/sitemap.xml

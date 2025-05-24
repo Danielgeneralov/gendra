@@ -4,6 +4,9 @@ import { useEffect, useRef } from "react";
 import Lenis from "lenis";
 import { useScroll, useTransform } from "framer-motion";
 
+// Ensure Lenis is only imported in client environment
+const isClient = typeof window !== 'undefined';
+
 interface SmoothScrollProviderProps {
   children: React.ReactNode;
 }
@@ -13,6 +16,8 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
 
   // Initialize Lenis on component mount
   useEffect(() => {
+    if (!isClient) return;
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // https://www.desmos.com/calculator/brs54l4xou
@@ -25,6 +30,8 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
 
     // Store the instance
     lenisRef.current = lenis;
+    // Make it available globally
+    (window as any).__lenis = lenis;
 
     // Update scroll position on requestAnimationFrame
     function raf(time: number) {
@@ -35,7 +42,7 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
     requestAnimationFrame(raf);
 
     // Sync with Framer Motion's scroll system
-    if (typeof window !== "undefined") {
+    if (isClient) {
       // Notify Framer Motion about scroll updates
       lenis.on('scroll', ({ scroll }: { scroll: number }) => {
         // Dispatch a custom scroll event that framer can listen to
@@ -47,6 +54,7 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
     return () => {
       lenis.destroy();
       lenisRef.current = null;
+      (window as any).__lenis = null;
     };
   }, []);
 
@@ -58,6 +66,8 @@ export function useLenis() {
   const lenisRef = useRef<Lenis | null>(null);
   
   useEffect(() => {
+    if (!isClient) return;
+    
     // Get the Lenis instance from window
     const getLenis = () => {
       // Find the Lenis instance on window
@@ -82,7 +92,7 @@ export function useLenis() {
 
 // Custom scrollTo utility that works with Lenis
 export function scrollTo(target: string | HTMLElement | number, options?: { offset?: number, immediate?: boolean, duration?: number }) {
-  if (typeof window !== 'undefined') {
+  if (isClient) {
     const lenis = (window as any).__lenis;
     if (lenis) {
       lenis.scrollTo(target, options);

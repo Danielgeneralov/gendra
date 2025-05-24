@@ -8,11 +8,14 @@ import { MotionButton } from "./MotionButton";
 import { DemoModal } from "./DemoModal";
 import { useLenis, scrollTo } from "@/context/SmoothScrollProvider";
 
+// Ensure client-side execution
+const isClient = typeof window !== "undefined";
+
 export function ParallaxHero() {
   // State for modal
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   
-  // Get Lenis instance
+  // Get Lenis instance - this will be null on server
   const lenis = useLenis();
   
   // Mouse-based parallax
@@ -24,8 +27,8 @@ export function ParallaxHero() {
   const headingScale = useTransform(scrollY, [0, 300], [1, 0.98]);
   
   // Calculate background parallax position (± 10px max)
-  const backgroundX = mousePosition.x * 10;
-  const backgroundY = mousePosition.y * 10;
+  const backgroundX = isClient ? mousePosition.x * 10 : 0;
+  const backgroundY = isClient ? mousePosition.y * 10 : 0;
   
   return (
     <>
