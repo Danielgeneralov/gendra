@@ -1,26 +1,47 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import Lenis from "lenis";
+import { useEffect, useRef, useState } from "react";
 import { useScroll, useTransform } from "framer-motion";
+import dynamic from "next/dynamic";
 
 // Ensure Lenis is only imported in client environment
 const isClient = typeof window !== 'undefined';
+
+// Dynamic import for Lenis
+let Lenis: any = null;
 
 interface SmoothScrollProviderProps {
   children: React.ReactNode;
 }
 
 export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
-  const lenisRef = useRef<Lenis | null>(null);
+  const lenisRef = useRef<any>(null);
+  const [isLenisLoaded, setIsLenisLoaded] = useState(false);
+
+  // Load Lenis dynamically only on client side
+  useEffect(() => {
+    if (!isClient) return;
+    
+    async function loadLenis() {
+      try {
+        const lenisModule = await import('lenis');
+        Lenis = lenisModule.default;
+        setIsLenisLoaded(true);
+      } catch (error) {
+        console.error("Failed to load Lenis:", error);
+      }
+    }
+    
+    loadLenis();
+  }, []);
 
   // Initialize Lenis on component mount
   useEffect(() => {
-    if (!isClient) return;
+    if (!isClient || !isLenisLoaded || !Lenis) return;
 
     const lenis = new Lenis({
       duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // https://www.desmos.com/calculator/brs54l4xou
+      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // https://www.desmos.com/calculator/brs54l4xou
       orientation: "vertical",
       smoothWheel: true,
       wheelMultiplier: 1,
@@ -56,14 +77,14 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
       lenisRef.current = null;
       (window as any).__lenis = null;
     };
-  }, []);
+  }, [isLenisLoaded]);
 
   return <>{children}</>;
 }
 
 // Utility hook to access Lenis from any component
 export function useLenis() {
-  const lenisRef = useRef<Lenis | null>(null);
+  const lenisRef = useRef<any>(null);
   
   useEffect(() => {
     if (!isClient) return;

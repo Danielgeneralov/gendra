@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "framer-motion";
 
-// Register ScrollTrigger plugin only on client side
+// Client-side flag
 const isClient = typeof window !== "undefined";
-if (isClient) {
-  gsap.registerPlugin(ScrollTrigger);
-}
+
+// GSAP will be loaded dynamically
+let gsap: any = null;
+let ScrollTrigger: any = null;
 
 // Metric data
 const metricData = [
@@ -35,10 +34,35 @@ export function InsightsMetrics() {
   const barRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [counters, setCounters] = useState<number[]>([0, 0, 0]);
   const [hasAnimated, setHasAnimated] = useState(false);
+  const [gsapLoaded, setGsapLoaded] = useState(false);
+
+  // Dynamically load GSAP and ScrollTrigger
+  useEffect(() => {
+    if (!isClient) return;
+
+    async function loadGSAP() {
+      try {
+        const gsapModule = await import('gsap');
+        gsap = gsapModule.gsap || gsapModule.default;
+        
+        const scrollTriggerModule = await import('gsap/ScrollTrigger');
+        ScrollTrigger = scrollTriggerModule.ScrollTrigger;
+        
+        // Register ScrollTrigger plugin
+        gsap.registerPlugin(ScrollTrigger);
+        
+        setGsapLoaded(true);
+      } catch (error) {
+        console.error("Failed to load GSAP:", error);
+      }
+    }
+
+    loadGSAP();
+  }, []);
 
   // Initialize GSAP animations
   useEffect(() => {
-    if (!isClient) return;
+    if (!isClient || !gsapLoaded || !gsap || !ScrollTrigger) return;
     
     const metrics = metricsRef.current;
     const chart = chartRef.current;
@@ -118,7 +142,7 @@ export function InsightsMetrics() {
         chartTl.scrollTrigger.kill();
       }
     };
-  }, []);
+  }, [gsapLoaded]);
 
   // Handle counter animations separately from GSAP
   useEffect(() => {

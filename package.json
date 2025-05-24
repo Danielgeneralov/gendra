@@ -7,7 +7,8 @@
     "build": "next build",
     "postbuild": "next-sitemap",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "vercel-build": "npm install && next build && next-sitemap"
   },
   "dependencies": {
     "@react-three/drei": "^9.99.5",
@@ -18,7 +19,9 @@
     "chalk": "^5.4.1",
     "commander": "^13.1.0",
     "framer-motion": "^10.16.5",
+    "gsap": "^3.12.5",
     "glob": "^11.0.2",
+    "lenis": "^1.0.33",
     "lru-cache": "^11.1.0",
     "lucide-react": "^0.507.0",
     "next": "^14.0.3",
