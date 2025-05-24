@@ -5,6 +5,7 @@ import { ClientProvider } from "@/context/ClientProvider";
 import { Inter } from 'next/font/google';
 import StructuredData from "@/components/SEO/StructuredData";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { SmoothScrollProvider } from "@/context/SmoothScrollProvider";
 
 // Initialize fonts
 const inter = Inter({
@@ -97,10 +98,12 @@ export default function RootLayout({
         <SpeedInsights />
         <StructuredData data={organizationStructuredData} />
         <ClientProvider>
-          <HeaderClient />
-          <main className="w-full">
-            {children}
-          </main>
+          <SmoothScrollProvider>
+            <HeaderClient />
+            <main className="w-full">
+              {children}
+            </main>
+          </SmoothScrollProvider>
         </ClientProvider>
       </body>
     </html>

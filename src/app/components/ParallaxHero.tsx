@@ -1,20 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useMousePosition } from "../hooks/useMousePosition";
 import { ScrollAnimation } from "./ScrollAnimation";
 import { MotionButton } from "./MotionButton";
 import { DemoModal } from "./DemoModal";
+import { useLenis, scrollTo } from "@/context/SmoothScrollProvider";
 
 export function ParallaxHero() {
   // State for modal
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   
+  // Get Lenis instance
+  const lenis = useLenis();
+  
   // Mouse-based parallax
   const mousePosition = useMousePosition();
   
-  // Scroll-based parallax
+  // Scroll-based parallax with Lenis
   const { scrollY } = useScroll();
   const headingY = useTransform(scrollY, [0, 300], [0, -20]);  
   const headingScale = useTransform(scrollY, [0, 300], [1, 0.98]);
