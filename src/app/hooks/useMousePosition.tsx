@@ -7,11 +7,16 @@ type MousePosition = {
   y: number;
 };
 
+// Flag for client-side execution
+const isClient = typeof window !== "undefined";
+
 export function useMousePosition() {
   const [mousePosition, setMousePosition] = useState<MousePosition>({ x: 0, y: 0 });
   const [isDesktop, setIsDesktop] = useState(false);
   
   useEffect(() => {
+    if (!isClient) return;
+    
     // Only track mouse position on desktop to avoid mobile battery drain
     const checkIfDesktop = () => {
       setIsDesktop(window.innerWidth > 768);
@@ -29,7 +34,7 @@ export function useMousePosition() {
   }, []);
   
   useEffect(() => {
-    if (!isDesktop) return;
+    if (!isClient || !isDesktop) return;
     
     let animationFrameId: number | null = null;
     let lastMouseX = 0;
