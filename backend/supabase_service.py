@@ -9,23 +9,32 @@ from pathlib import Path
 # Load .env as early as possible
 env_path = find_dotenv()
 if not env_path:
-    env_path = Path(__file__).parent / ".env"
+    # Look for .env.local in the project root (two directories up from backend)
+    env_path = Path(__file__).parent.parent / ".env.local"
 load_dotenv(dotenv_path=env_path, override=True)
 
 logger = logging.getLogger(__name__)
 
 class SupabaseService:
     def __init__(self):
-        self.supabase_url = os.getenv("SUPABASE_URL")
-        self.supabase_key = os.getenv("SUPABASE_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-        
-        # Debug logging
-        logger.info(f"Supabase URL: {self.supabase_url}")
-        logger.info(f"Supabase Key: {'*' * len(self.supabase_key) if self.supabase_key else None}")
-        
-        if not self.supabase_url or not self.supabase_key:
-            raise ValueError("Missing Supabase credentials")
-        self.client: Client = create_client(self.supabase_url, self.supabase_key)
+        self._client = None
+        self._supabase_url = None
+        self._supabase_key = None
+
+    @property
+    def client(self) -> Client:
+        if self._client is None:
+            self._supabase_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+            self._supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+            
+            # Debug logging
+            logger.info(f"Supabase URL: {self._supabase_url}")
+            logger.info(f"Supabase Key: {'*' * len(self._supabase_key) if self._supabase_key else None}")
+            
+            if not self._supabase_url or not self._supabase_key:
+                raise ValueError("Missing Supabase credentials")
+            self._client = create_client(self._supabase_url, self._supabase_key)
+        return self._client
 
     async def save_quote(self, quote_data: Dict[str, Any]) -> Dict[str, Any]:
         """Save a quote to the quotes table"""
@@ -133,6 +142,21 @@ class SupabaseService:
             return result.data[0] if result.data else None
         except Exception as e:
             logger.error(f"Error getting portal config: {str(e)}")
+            raise
+
+    async def save_demo_request(self, demo_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Save a demo request to the demos table"""
+        try:
+            data = {
+                "full_name": demo_data["full_name"],
+                "company": demo_data["company"],
+                "email": demo_data["email"],
+                "message": demo_data.get("message"),
+            }
+            result = self.client.table("demos").insert(data).execute()
+            return result.data[0] if result.data else None
+        except Exception as e:
+            logger.error(f"Error saving demo request: {str(e)}")
             raise
 
 # Create a singleton instance

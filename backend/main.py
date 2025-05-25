@@ -141,6 +141,21 @@ class ClientSetupRequest(BaseModel):
             }
         }
 
+class DemoRequest(BaseModel):
+    full_name: str
+    company: str
+    email: EmailStr
+    message: Optional[str] = None
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "full_name": "John Doe",
+                "company": "Acme Corp",
+                "email": "john.doe@example.com",
+                "message": "I would like a demo of your product."
+            }
+        }
+
 @app.post("/setup-client", status_code=201)
 async def setup_client(request: Request, setup_req: ClientSetupRequest):
     try:
@@ -318,6 +333,15 @@ async def get_configuration(
             status_code=500,
             detail="Internal server error while fetching client configuration",
         )
+
+@app.post("/demo-request")
+async def create_demo_request(demo_req: DemoRequest):
+    try:
+        result = await supabase_service.save_demo_request(demo_req.dict())
+        return {"success": True, "data": result}
+    except Exception as e:
+        logger.error(f"Error saving demo request: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to save demo request.")
 
 if __name__ == "__main__":
     import uvicorn
