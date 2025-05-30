@@ -23,6 +23,7 @@ export function useMousePosition() {
     };
     
     // Check initially
+
     checkIfDesktop();
     
     // Update on resize

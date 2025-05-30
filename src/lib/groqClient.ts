@@ -20,7 +20,7 @@ export const PARSING_VERSION = '1.2.0';
  */
 export const GROQ_MODELS = {
   PRIMARY: 'llama-3.3-70b-versatile',
-  FALLBACK: 'qwen-qwq-32b',
+  FALLBACK: 'llama-3.1-8b-instant',
 };
 
 /**
@@ -197,6 +197,15 @@ function validateGroqResponse(parsedData: any): ParsedRFQ {
     fields: Object.keys(parsedData).join(',')
   });
   
+  // Log the actual material field for debugging
+  logger.info(COMPONENT, 'Material field debug info', {
+    materialValue: parsedData.material,
+    materialType: typeof parsedData.material,
+    materialIsNull: parsedData.material === null,
+    materialIsUndefined: parsedData.material === undefined,
+    materialStringified: JSON.stringify(parsedData.material)
+  });
+  
   // Required fields validation
   const requiredFields = ['material', 'quantity', 'dimensions', 'complexity', 'deadline', 'industry'];
   for (const field of requiredFields) {
@@ -230,11 +239,35 @@ function validateGroqResponse(parsedData: any): ParsedRFQ {
     }
   }
   
-  // Type validations and conversions
+  // Type validations and conversions - make material validation more robust
   if (typeof parsedData.material !== 'string') {
-    throw new GroqParsingError('Material must be a string');
+    logger.warn(COMPONENT, 'Material field is not a string, attempting conversion', {
+      materialValue: parsedData.material,
+      materialType: typeof parsedData.material
+    });
+    
+    // Try to convert to string if possible
+    if (parsedData.material === null || parsedData.material === undefined) {
+      throw new GroqParsingError('Material field is null or undefined');
+    }
+    
+    // Convert to string
+    try {
+      parsedData.material = String(parsedData.material);
+      logger.info(COMPONENT, 'Successfully converted material to string', {
+        convertedMaterial: parsedData.material
+      });
+    } catch (conversionError) {
+      throw new GroqParsingError(`Material must be a string but got ${typeof parsedData.material}: ${JSON.stringify(parsedData.material)}`);
+    }
   }
   
+  // Validate that material is not an empty string after conversion
+  if (!parsedData.material || parsedData.material.trim().length === 0) {
+    throw new GroqParsingError('Material field cannot be empty');
+  }
+  
+  // Validate quantity
   if (typeof parsedData.quantity !== 'number') {
     // Try to convert to number if it's a string
     const numQuantity = Number(parsedData.quantity);
@@ -545,9 +578,27 @@ async function callGroqModel(
     
     const jsonContent = data.choices[0].message.content;
     
+    // Log the raw API response for debugging
+    logger.info(COMPONENT, 'Raw Groq API response received', {
+      fullResponseKeys: Object.keys(data).join(','),
+      hasChoices: !!data.choices,
+      choicesLength: data.choices?.length || 0,
+      contentLength: jsonContent?.length || 0,
+      contentPreview: jsonContent?.substring(0, 200) || 'No content'
+    });
+    
     try {
       // Parse the JSON content
-      return JSON.parse(jsonContent);
+      const parsedResponse = JSON.parse(jsonContent);
+      
+      // Log what we got after parsing
+      logger.info(COMPONENT, 'Successfully parsed JSON from Groq', {
+        parsedKeys: Object.keys(parsedResponse).join(','),
+        materialField: parsedResponse.material,
+        materialType: typeof parsedResponse.material
+      });
+      
+      return parsedResponse;
     } catch (jsonError) {
       logger.error(COMPONENT, 'Failed to parse JSON from Groq response', jsonError, {
         responseContent: jsonContent,
