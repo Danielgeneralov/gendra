@@ -8,232 +8,224 @@ export default function PricingPage() {
     <main className="bg-gradient-to-b from-black via-[#050C1C] to-[#0A1828] min-h-screen text-white py-24 px-6">
       {/* Hero Section */}
       <motion.div 
-        className="text-center max-w-3xl mx-auto mb-20"
+        className="text-center max-w-4xl mx-auto mb-20"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
       >
-        <h1 className="text-5xl font-bold text-white mb-4">Flexible pricing built for manufacturers</h1>
-        <p className="text-gray-400 text-lg">
-          Whether you're quoting a few jobs a week or managing a full production line, Gendra adapts to your workflow.
+        <h1 className="text-5xl font-bold text-white mb-8">AI Growth Pricing</h1>
+        <p className="text-gray-300 text-xl mb-12">
+          Our solutions are tailored to your factory's size, data maturity, and EBITDA goals.
         </p>
+
+        {/* Why no fixed pricing section */}
+        <motion.div 
+          className="bg-[#0A1828]/50 rounded-xl p-8 border border-white/10 shadow-lg mb-12"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+        >
+          <h2 className="text-2xl font-semibold text-white mb-6">Why no fixed pricing?</h2>
+          <div className="grid md:grid-cols-2 gap-6 text-left">
+            <div className="flex items-start">
+              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-4 flex-shrink-0"></div>
+              <p className="text-gray-300">
+                Manufacturers waste 8-15% in material costs → We align fees with <em className="text-blue-400">your savings</em>.
+              </p>
+            </div>
+            <div className="flex items-start">
+              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-4 flex-shrink-0"></div>
+              <p className="text-gray-300">
+                Private equity firms need exit-ready ops → We build scalable AI stacks.
+              </p>
+            </div>
+          </div>
+        </motion.div>
       </motion.div>
 
-      {/* Pricing Grid */}
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Free Tier */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
-          className="bg-[#0A1828]/50 rounded-xl p-8 border border-white/10 shadow-lg hover:shadow-blue-700/20 transition group"
-        >
-          <h2 className="text-2xl font-bold mb-2">Free</h2>
-          <p className="text-gray-400 mb-4">Get started with the basics</p>
-          
-          <div className="mb-6">
-            <span className="text-4xl font-bold">$0</span>
-            <span className="text-gray-400 ml-2">/month</span>
-          </div>
-          
-          <div className="mb-8">
-            <p className="text-white/80 mb-1">Setup fee: <span className="text-white">$0</span></p>
-          </div>
-          
-          <ul className="space-y-3 mb-8">
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>10 quotes per month</span>
-            </li>
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>AI quote parsing</span>
-            </li>
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Basic scheduling</span>
-            </li>
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>1 user account</span>
-            </li>
-          </ul>
-          
-          <Link 
-            href="/signup"
-            className="block w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-center rounded-lg font-medium transition"
-          >
-            Get Started
-          </Link>
-        </motion.div>
-
-        {/* Standard Tier */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
-          className="bg-[#0A1828]/50 rounded-xl p-8 border border-blue-600/50 shadow-lg shadow-blue-700/10 hover:shadow-blue-600/30 transition group relative z-10 transform hover:-translate-y-1"
-        >
-          {/* Most Popular Badge */}
-          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white text-sm font-medium py-1 px-4 rounded-full">
-            Most Popular
-          </div>
-
-          <h2 className="text-2xl font-bold mb-2">Standard</h2>
-          <p className="text-gray-400 mb-4">For growing manufacturing teams</p>
-          
-          <div className="mb-6">
-            <span className="text-4xl font-bold">$99</span>
-            <span className="text-gray-400 ml-2">/month</span>
-          </div>
-          
-          <div className="mb-8">
-            <p className="text-white/80 mb-1">Setup fee: <span className="text-white">$199</span></p>
-          </div>
-          
-          <ul className="space-y-3 mb-8">
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Unlimited quotes</span>
-            </li>
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Advanced AI parsing & routing</span>
-            </li>
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Visual shop floor scheduling</span>
-            </li>
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Quote analytics dashboard</span>
-            </li>
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Up to 5 user accounts</span>
-            </li>
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Email & chat support</span>
-            </li>
-          </ul>
-          
-          <Link 
-            href="/signup"
-            className="block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-center rounded-lg font-medium transition"
-          >
-            Start Free Trial
-          </Link>
-        </motion.div>
-
-        {/* Premium Tier */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, ease: "easeOut", delay: 0.3 }}
-          className="bg-[#0A1828]/50 rounded-xl p-8 border border-white/10 shadow-lg hover:shadow-blue-700/20 transition group"
-        >
-          <h2 className="text-2xl font-bold mb-2">Premium</h2>
-          <p className="text-gray-400 mb-4">For established manufacturers</p>
-          
-          <div className="mb-6">
-            <span className="text-4xl font-bold">$249</span>
-            <span className="text-gray-400 ml-2">/month</span>
-          </div>
-          
-          <div className="mb-8">
-            <p className="text-white/80 mb-1">Setup fee: <span className="text-white">$399</span> <span className="text-green-400">(waived with annual billing)</span></p>
-          </div>
-          
-          <ul className="space-y-3 mb-8">
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Everything in Standard, plus:</span>
-            </li>
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Multi-stage workflow automation</span>
-            </li>
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Custom quoting form builder</span>
-            </li>
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Advanced capacity planning</span>
-            </li>
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Up to 15 user accounts</span>
-            </li>
-            <li className="flex items-start">
-              <svg className="h-5 w-5 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Priority support with SLAs</span>
-            </li>
-          </ul>
-          
-          <Link 
-            href="/signup"
-            className="block w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-center rounded-lg font-medium transition"
-          >
-            Contact Sales
-          </Link>
-        </motion.div>
-      </div>
-
-      {/* Enterprise / High-Touch CTA */}
+      {/* How it works section */}
       <motion.div 
-        className="text-center mt-32 py-16 border-t border-white/10 max-w-4xl mx-auto"
+        className="max-w-5xl mx-auto mb-20"
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6, ease: "easeOut" }}
       >
-        <h2 className="text-3xl font-semibold text-white mb-4">Need more flexibility?</h2>
-        <p className="text-gray-400 mb-6 max-w-2xl mx-auto">
-          Gendra supports multi-site operations, ERP integrations, and custom analytics workflows.  
-          If you need a tailored onboarding or pricing model, let's talk.
-        </p>
-        <Link
-          href="/contact"
-          className="inline-block bg-white text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition"
+        <h2 className="text-3xl font-bold text-center text-white mb-12">How it works:</h2>
+        
+        <div className="grid md:grid-cols-2 gap-12 max-w-4xl mx-auto">
+          {/* Free Audit */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
+            className="bg-[#0A1828]/50 rounded-xl p-8 border border-white/10 shadow-lg hover:shadow-blue-700/20 transition group"
+          >
+            <div className="flex items-center mb-6">
+              <div className="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold mr-4 text-lg">
+                1
+              </div>
+              <h3 className="text-2xl font-bold">Free Audit</h3>
+            </div>
+            
+            <div className="mb-6">
+              <span className="text-4xl font-bold text-green-400">$0</span>
+              <span className="text-gray-400 ml-3 text-lg">• 2 weeks</span>
+            </div>
+            
+            <p className="text-gray-300 mb-8 text-lg">
+              We find $100K+ in savings or you pay nothing.
+            </p>
+
+            <ul className="space-y-4 text-gray-300">
+              <li className="flex items-start">
+                <svg className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Comprehensive cost analysis</span>
+              </li>
+              <li className="flex items-start">
+                <svg className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Process optimization review</span>
+              </li>
+              <li className="flex items-start">
+                <svg className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>AI opportunity assessment</span>
+              </li>
+              <li className="flex items-start">
+                <svg className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Detailed savings roadmap</span>
+              </li>
+            </ul>
+
+            <div className="mt-8">
+              <Link 
+                href="https://calendly.com/dan-generalov01"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full py-4 px-6 bg-green-600 hover:bg-green-700 text-center rounded-lg font-medium text-lg transition transform hover:scale-105"
+              >
+                Start Free Audit
+              </Link>
+            </div>
+          </motion.div>
+
+          {/* Enterprise Pricing */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+            className="bg-[#0A1828]/50 rounded-xl p-8 border border-blue-600/50 shadow-lg shadow-blue-700/10 hover:shadow-blue-600/30 transition group relative z-10 transform hover:-translate-y-1"
+          >
+            {/* Most Popular Badge */}
+            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white text-sm font-medium py-2 px-6 rounded-full">
+              Custom Solutions
+            </div>
+
+            <div className="flex items-center mb-6">
+              <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mr-4 text-lg">
+                2
+              </div>
+              <h3 className="text-2xl font-bold">Enterprise Implementation</h3>
+            </div>
+            
+            <div className="mb-6">
+              <span className="text-4xl font-bold">Custom</span>
+              <span className="text-gray-400 ml-3 text-lg">pricing</span>
+            </div>
+            
+            <p className="text-gray-300 mb-8 text-lg">
+              Tailored AI solutions aligned with your savings and growth targets.
+            </p>
+
+            <ul className="space-y-4 text-gray-300">
+              <li className="flex items-start">
+                <svg className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Performance-based pricing model</span>
+              </li>
+              <li className="flex items-start">
+                <svg className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Full AI stack deployment</span>
+              </li>
+              <li className="flex items-start">
+                <svg className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Dedicated growth team</span>
+              </li>
+              <li className="flex items-start">
+                <svg className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Exit-ready operations</span>
+              </li>
+            </ul>
+
+            <div className="mt-8">
+              <Link 
+                href="https://calendly.com/dan-generalov01"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-center rounded-lg font-medium text-lg transition transform hover:scale-105"
+              >
+                Discuss Custom Pricing
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Process Flow */}
+        <motion.div 
+          className="mt-16 text-center"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, ease: "easeOut", delay: 0.3 }}
         >
-          Talk to Sales
+          <div className="flex items-center justify-center space-x-4 text-gray-400">
+            <span className="text-lg font-medium">Free Audit</span>
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+            <span className="text-lg font-medium">Pilot Program</span>
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+            <span className="text-lg font-medium">Full Scale</span>
+          </div>
+        </motion.div>
+      </motion.div>
+
+      {/* Quote and CTA Section */}
+      <motion.div 
+        className="text-center mt-20 py-16 border-t border-white/10 max-w-4xl mx-auto"
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
+        <blockquote className="text-2xl font-medium text-blue-400 mb-8 italic">
+          "We only win when you do."
+        </blockquote>
+        <Link
+          href="https://calendly.com/dan-generalov01"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-medium text-lg transition transform hover:scale-105"
+        >
+          Book a Call with Our M&A Team
         </Link>
       </motion.div>
 
@@ -249,18 +241,18 @@ export default function PricingPage() {
         
         <div className="space-y-6">
           <div className="bg-[#0A1828]/80 rounded-lg p-6 border border-white/10">
-            <h3 className="font-semibold text-lg mb-2">How does the free trial work?</h3>
-            <p className="text-gray-400">All plans start with a 14-day free trial with full access to premium features. No credit card required to start. You can upgrade to a paid plan anytime during or after your trial.</p>
+            <h3 className="font-semibold text-lg mb-2">What if you don't find $100K+ in savings?</h3>
+            <p className="text-gray-400">You pay nothing. Our free audit is risk-free, and we only move forward if we can demonstrate clear, measurable value for your operations.</p>
           </div>
           
           <div className="bg-[#0A1828]/80 rounded-lg p-6 border border-white/10">
-            <h3 className="font-semibold text-lg mb-2">Can I change plans later?</h3>
-            <p className="text-gray-400">Yes, you can upgrade or downgrade your plan at any time. When upgrading, your new features become available immediately. When downgrading, changes take effect at the end of your current billing cycle.</p>
+            <h3 className="font-semibold text-lg mb-2">How do you align fees with our savings?</h3>
+            <p className="text-gray-400">Our pricing is performance-based. We take a percentage of the documented savings we generate, ensuring our success is directly tied to your bottom line results.</p>
           </div>
           
           <div className="bg-[#0A1828]/80 rounded-lg p-6 border border-white/10">
-            <h3 className="font-semibold text-lg mb-2">Is there a discount for annual billing?</h3>
-            <p className="text-gray-400">Yes, annual billing gives you two months free compared to monthly pricing. We also waive the setup fee on Premium plans with annual commitment.</p>
+            <h3 className="font-semibold text-lg mb-2">What makes your AI stack "exit-ready"?</h3>
+            <p className="text-gray-400">We build scalable, documented systems that increase your company's valuation. Our implementations focus on creating sustainable competitive advantages that PE firms and acquirers value.</p>
           </div>
         </div>
       </motion.div>
